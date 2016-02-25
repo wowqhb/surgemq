@@ -705,7 +705,6 @@ func (this *buffer) waitForWriteSpaceAndReadConet(n int, r io.Reader) (int, erro
 		}
 
 		n_, err := r.Read(this.buf[pstart:pend])
-		if
 		if err != nil {
 			return 0, 0, err
 		}
