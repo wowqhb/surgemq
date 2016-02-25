@@ -140,37 +140,46 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		//测试临时添加，2016.02.25
-		this.ppcond.L.Lock()
-		//厕所临时添加，2016.02.25
-		defer this.ppcond.L.Unlock()
+
 		if this.isDone() {
 			return total, io.EOF
 		}
+		//测试临时添加，2016.02.25
+		var err_ error = nil
+		var err__ error = nil
+		var n int = 0
+		this.ppcond.L.Lock()
 
 		start, cnt, err := this.waitForWriteSpace(defaultReadBlockSize)
 		if err != nil {
-			return 0, err
+			err_ = err
+		}else {
+
+			pstart := start & this.mask
+			pend := pstart + int64(cnt)
+			if pend > this.size {
+				pend = this.size
+			}
+
+			n_, err := r.Read(this.buf[pstart:pend])
+			err__ = err
+			n = n_
 		}
-
-		pstart := start & this.mask
-		pend := pstart + int64(cnt)
-		if pend > this.size {
-			pend = this.size
+		//厕所临时添加，2016.02.25
+		this.ppcond.L.Unlock()
+		if err_ != nil {
+			return 0, err_
 		}
-
-		n, err := r.Read(this.buf[pstart:pend])
-
 		if n > 0 {
 			total += int64(n)
 			_, err := this.WriteCommit(n)
 			if err != nil {
-				return total, err
+				return total, err__
 			}
 		}
 
-		if err != nil {
-			return total, err
+		if err__ != nil {
+			return total, err__
 		}
 	}
 
