@@ -632,7 +632,7 @@ func roundUpPowerOfTwo64(n int64) int64 {
  */
 func (this *buffer) waitForWriteSpaceAndReadConet(n int, r io.Reader) (int, error) {
 	if this.isDone() {
-		return 0, 0, io.EOF
+		return 0, io.EOF
 	}
 	var ret int = 0;
 	// The current producer position, remember it's a forever inreasing int64,
