@@ -23,12 +23,12 @@ import (
 )
 
 var (
-	bufcnt            int64
+	bufcnt int64
 	DefaultBufferSize int64
 )
 
 const (
-	defaultReadBlockSize  = 8192
+	defaultReadBlockSize = 8192
 	defaultWriteBlockSize = 8192
 )
 
@@ -56,24 +56,27 @@ func (this *sequence) set(seq int64) {
 }
 
 type buffer struct {
-	id int64
+	id     int64
 
-	buf []byte
-	tmp []byte
+	buf    []byte
+	tmp    []byte
 
-	size int64
-	mask int64
+	size   int64
+	mask   int64
 
-	done int64
+	done   int64
 
-	pseq *sequence
-	cseq *sequence
+	pseq   *sequence
+	cseq   *sequence
 
-	pcond *sync.Cond
-	ccond *sync.Cond
+	pcond  *sync.Cond
+	ccond  *sync.Cond
 
-	cwait int64
-	pwait int64
+	//临时测试使用，2016.02.25
+	ppcond *sync.Cond
+
+	cwait  int64
+	pwait  int64
 }
 
 func newBuffer(size int64) (*buffer, error) {
@@ -89,8 +92,8 @@ func newBuffer(size int64) (*buffer, error) {
 		return nil, fmt.Errorf("Size must be power of two. Try %d.", roundUpPowerOfTwo64(size))
 	}
 
-	if size < 2*defaultReadBlockSize {
-		return nil, fmt.Errorf("Size must at least be %d. Try %d.", 2*defaultReadBlockSize, 2*defaultReadBlockSize)
+	if size < 2 * defaultReadBlockSize {
+		return nil, fmt.Errorf("Size must at least be %d. Try %d.", 2 * defaultReadBlockSize, 2 * defaultReadBlockSize)
 	}
 
 	return &buffer{
@@ -136,6 +139,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 	total := int64(0)
 
+	//测试临时添加，2016.02.25
+	this.ppcond.L.Lock()
 	for {
 		if this.isDone() {
 			return total, io.EOF
@@ -166,6 +171,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 	}
+
+	//厕所临时添加，2016.02.25
+	this.ppcond.L.Unlock()
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
@@ -224,7 +232,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    the beginning of the buffer. In thise case, we can also just copy data from
 		//    buffer to p, and copy will just copy until the end of the buffer and stop.
 		//    The number of bytes will NOT be len(p) but less than that.
-		if cpos+pl < ppos {
+		if cpos + pl < ppos {
 			n := copy(p, this.buf[cindex:])
 
 			this.cseq.set(cpos + int64(n))
@@ -249,8 +257,8 @@ func (this *buffer) Read(p []byte) (int, error) {
 
 			// if cindex+n < size, that means we can copy all n bytes into p.
 			// No wrapping in this case.
-			if cindex+b < this.size {
-				n = copy(p, this.buf[cindex:cindex+b])
+			if cindex + b < this.size {
+				n = copy(p, this.buf[cindex:cindex + b])
 			} else {
 				// If cindex+n >= size, that means we can copy to the end of buffer
 				n = copy(p, this.buf[cindex:])
@@ -291,7 +299,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	total := ringCopy(this.buf, p, int64(start)&this.mask)
+	total := ringCopy(this.buf, p, int64(start) & this.mask)
 
 	this.pseq.set(start + int64(len(p)))
 	this.ccond.L.Lock()
@@ -345,21 +353,21 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 	}
 
 	// There's data to peek. The size of the data could be <= n.
-	if cpos+m <= ppos {
+	if cpos + m <= ppos {
 		cindex := cpos & this.mask
 
 		// If cindex (index relative to buffer) + n is more than buffer size, that means
 		// the data wrapped
-		if cindex+m > this.size {
+		if cindex + m > this.size {
 			// reset the tmp buffer
 			this.tmp = this.tmp[0:0]
 
 			l := len(this.buf[cindex:])
 			this.tmp = append(this.tmp, this.buf[cindex:]...)
-			this.tmp = append(this.tmp, this.buf[0:m-int64(l)]...)
+			this.tmp = append(this.tmp, this.buf[0:m - int64(l)]...)
 			return this.tmp, err
 		} else {
-			return this.buf[cindex : cindex+m], err
+			return this.buf[cindex : cindex + m], err
 		}
 	}
 
@@ -401,17 +409,17 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 
 	// If cindex (index relative to buffer) + n is more than buffer size, that means
 	// the data wrapped
-	if cindex+int64(n) > this.size {
+	if cindex + int64(n) > this.size {
 		// reset the tmp buffer
 		this.tmp = this.tmp[0:0]
 
 		l := len(this.buf[cindex:])
 		this.tmp = append(this.tmp, this.buf[cindex:]...)
-		this.tmp = append(this.tmp, this.buf[0:n-l]...)
+		this.tmp = append(this.tmp, this.buf[0:n - l]...)
 		return this.tmp[:n], nil
 	}
 
-	return this.buf[cindex : cindex+int64(n)], nil
+	return this.buf[cindex : cindex + int64(n)], nil
 }
 
 // Commit moves the cursor forward by n bytes. It behaves like Read() except it doesn't
@@ -439,7 +447,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos+int64(n) <= ppos {
+	if cpos + int64(n) <= ppos {
 		this.cseq.set(cpos + int64(n))
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
@@ -461,11 +469,11 @@ func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
 	}
 
 	pstart := start & this.mask
-	if pstart+int64(cnt) > this.size {
+	if pstart + int64(cnt) > this.size {
 		return this.buf[pstart:], true, nil
 	}
 
-	return this.buf[pstart : pstart+int64(cnt)], false, nil
+	return this.buf[pstart : pstart + int64(cnt)], false, nil
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
@@ -584,7 +592,7 @@ func ringCopy(dst, src []byte, start int64) int {
 }
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n&(n-1)) == 0
+	return n != 0 && (n & (n - 1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
