@@ -689,7 +689,7 @@ func (this *buffer) waitForWriteSpaceAndReadConet(n int, r io.Reader) (int, erro
 		this.pcond.L.Lock()
 		for cpos = this.cseq.get(); wrap > cpos; cpos = this.cseq.get() {
 			if this.isDone() {
-				return 0, 0, io.EOF
+				return 0, io.EOF
 			}
 
 			this.pwait++
@@ -706,7 +706,7 @@ func (this *buffer) waitForWriteSpaceAndReadConet(n int, r io.Reader) (int, erro
 
 		n_, err := r.Read(this.buf[pstart:pend])
 		if err != nil {
-			return 0, 0, err
+			return 0, err
 		}
 		ret = n_
 
