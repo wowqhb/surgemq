@@ -72,7 +72,7 @@ type buffer struct {
 	pcond  *sync.Cond
 	ccond  *sync.Cond
 
-	//临时测试使用，2016.02.25
+	//测试（加锁）使用，2016.02.25
 	ppcond *sync.Cond
 
 	cwait  int64
@@ -144,7 +144,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		//测试临时添加，2016.02.25
+		//测试（加锁）临时添加，2016.02.25
 		var err_ error = nil
 		var err__ error = nil
 		var n int = 0
@@ -165,11 +165,19 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			err__ = err
 			n = n_
 		}
-		//厕所临时添加，2016.02.25
+		//测试（加锁）临时添加，2016.02.25
+
+		/*
+		//测试（修改函数），2016.02.25
+		n, err_ := this.waitForWriteSpaceAndReadConet(defaultReadBlockSize, r)
+		//测试（修改函数），2016.02.25
+		*/
+
 		this.ppcond.L.Unlock()
 		if err_ != nil {
 			return 0, err_
 		}
+
 		if n > 0 {
 			total += int64(n)
 			_, err := this.WriteCommit(n)
@@ -615,4 +623,96 @@ func roundUpPowerOfTwo64(n int64) int64 {
 	n++
 
 	return n
+}
+
+
+/**
+2016.02.25
+新建函数：用于测试加锁读内容，是否可以解决环形buffer的粘包问题
+ */
+func (this *buffer) waitForWriteSpaceAndReadConet(n int, r io.Reader) (int, error) {
+	if this.isDone() {
+		return 0, 0, io.EOF
+	}
+	var ret int = 0;
+	// The current producer position, remember it's a forever inreasing int64,
+	// NOT the position relative to the buffer
+	ppos := this.pseq.get()
+
+	// The next producer position we will get to if we write len(p)
+	next := ppos + int64(n)
+
+	// For the producer, gate is the previous consumer sequence.
+	gate := this.pseq.gate
+
+	wrap := next - this.size
+
+	// If wrap point is greater than gate, that means the consumer hasn't read
+	// some of the data in the buffer, and if we read in additional data and put
+	// into the buffer, we would overwrite some of the unread data. It means we
+	// cannot do anything until the customers have passed it. So we wait...
+	//
+	// Let's say size = 16, block = 4, ppos = 0, gate = 0
+	//   then next = 4 (0+4), and wrap = -12 (4-16)
+	//   _______________________________________________________________________
+	//   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+	//   -----------------------------------------------------------------------
+	//    ^                ^
+	//    ppos,            next
+	//    gate
+	//
+	// So wrap (-12) > gate (0) = false, and gate (0) > ppos (0) = false also,
+	// so we move on (no waiting)
+	//
+	// Now if we get to ppos = 14, gate = 12,
+	// then next = 18 (4+14) and wrap = 2 (18-16)
+	//
+	// So wrap (2) > gate (12) = false, and gate (12) > ppos (14) = false aos,
+	// so we move on again
+	//
+	// Now let's say we have ppos = 14, gate = 0 still (nothing read),
+	// then next = 18 (4+14) and wrap = 2 (18-16)
+	//
+	// So wrap (2) > gate (0) = true, which means we have to wait because if we
+	// put data into the slice to the wrap point, it would overwrite the 2 bytes
+	// that are currently unread.
+	//
+	// Another scenario, let's say ppos = 100, gate = 80,
+	// then next = 104 (100+4) and wrap = 88 (104-16)
+	//
+	// So wrap (88) > gate (80) = true, which means we have to wait because if we
+	// put data into the slice to the wrap point, it would overwrite the 8 bytes
+	// that are currently unread.
+	//
+	if wrap > gate || gate > ppos {
+		var cpos int64
+		this.pcond.L.Lock()
+		for cpos = this.cseq.get(); wrap > cpos; cpos = this.cseq.get() {
+			if this.isDone() {
+				return 0, 0, io.EOF
+			}
+
+			this.pwait++
+			this.pcond.Wait()
+		}
+
+		this.pseq.gate = cpos
+
+		pstart := ppos & this.mask
+		pend := pstart + int64(n)
+		if pend > this.size {
+			pend = this.size
+		}
+
+		n_, err := r.Read(this.buf[pstart:pend])
+		if
+		if err != nil {
+			return 0, 0, err
+		}
+		ret = n_
+
+		this.pcond.L.Unlock()
+	}
+
+	return ret, nil
 }
