@@ -139,9 +139,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 	total := int64(0)
 
-	//测试临时添加，2016.02.25
-	this.ppcond.L.Lock()
 	for {
+		//测试临时添加，2016.02.25
+		this.ppcond.L.Lock()
+		//厕所临时添加，2016.02.25
+		defer this.ppcond.L.Unlock()
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -172,8 +174,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 	}
 
-	//厕所临时添加，2016.02.25
-	this.ppcond.L.Unlock()
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
