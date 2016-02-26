@@ -144,7 +144,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		/*//测试（加锁）临时添加，2016.02.25
+		//测试（加锁）临时添加，2016.02.25
 		var err_ error = nil
 		var err__ error = nil
 		var n int = 0
@@ -165,19 +165,18 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			err__ = err
 			n = n_
 		}
-		//测试（加锁）临时添加，2016.02.25
+
 		this.ppcond.L.Unlock()
 		if err_ != nil {
 			return 0, err_
 		}
-*/
+		//测试（加锁）临时添加，2016.02.25
 
 
 
-
-		//测试（修改函数），2016.02.25
+		/*//测试（修改函数），2016.02.25
 		n, err__ := this.waitForWriteSpaceAndReadConet(defaultReadBlockSize, r)
-		//测试（修改函数），2016.02.25
+		//测试（修改函数），2016.02.25*/
 
 		if n > 0 {
 			total += int64(n)
