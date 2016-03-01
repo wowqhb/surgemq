@@ -106,7 +106,7 @@ func startServiceN(t testing.TB, u *url.URL, wg *sync.WaitGroup, ready1, ready2 
 	<-ready2
 
 	for _, svc := range svr.svcs {
-		glog.Infof("Stopping service %d", svc.id)
+		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
 		svc.stop()
 	}
 

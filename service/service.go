@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"io"
 	//   "runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
-	"github.com/surge/glog"
 	"github.com/surgemq/message"
 )
 
@@ -125,20 +125,36 @@ type service struct {
 	rmsgs []*message.PublishMessage
 }
 
-func (this *service) start() error {
+func (this *service) start(client_id string) error {
 	var err error
 
 	//   debug.PrintStack()
 	// Create the incoming ring buffer
-	this.in, err = newBuffer(DefaultBufferSize)
-	if err != nil {
-		return err
-	}
+	// TODO: 如果是master_开头的，buffer大一些
+	Log.Debugc(func() string { return fmt.Sprintf("make new buffer for client: %s", client_id) })
 
-	// Create the outgoing ring buffer
-	this.out, err = newBuffer(DefaultBufferSize)
-	if err != nil {
-		return err
+	if strings.Contains(client_id, "master") {
+		this.in, err = newBuffer(MasterInBufferSize)
+		if err != nil {
+			return err
+		}
+
+		// Create the outgoing ring buffer
+		this.out, err = newBuffer(MasterOutBufferSize)
+		if err != nil {
+			return err
+		}
+	} else {
+		this.in, err = newBuffer(DeviceInBufferSize)
+		if err != nil {
+			return err
+		}
+
+		// Create the outgoing ring buffer
+		this.out, err = newBuffer(DeviceOutBufferSize)
+		if err != nil {
+			return err
+		}
 	}
 
 	// If this is a server
@@ -146,7 +162,7 @@ func (this *service) start() error {
 		// Creat the onPublishFunc so it can be used for published messages
 		this.onpub = func(msg *message.PublishMessage) error {
 			if err := this.publish(msg, nil); err != nil {
-				glog.Errorf("service/onPublish: Error publishing message: %v", err)
+				Log.Errorc(func() string { return fmt.Sprintf("service/onPublish: Error publishing message: %v", err) })
 				return err
 			}
 
@@ -193,7 +209,7 @@ func (this *service) stop() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			glog.Errorf("(%s) Recovering from panic: %v", this.cid(), r)
+			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
 		}
 	}()
 
@@ -204,13 +220,13 @@ func (this *service) stop() {
 
 	// Close quit channel, effectively telling all the goroutines it's time to quit
 	if this.done != nil {
-		glog.Debugf("(%s) closing this.done", this.cid())
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.done", this.cid()) })
 		close(this.done)
 	}
 
 	// Close the network connection
 	if this.conn != nil {
-		glog.Debugf("(%s) closing this.conn", this.cid())
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
 		this.conn.Close()
 	}
 
@@ -220,18 +236,22 @@ func (this *service) stop() {
 	// Wait for all the goroutines to stop.
 	this.wgStopped.Wait()
 
-	glog.Debugf("(%s) Received %d bytes in %d messages.", this.cid(), this.inStat.bytes, this.inStat.msgs)
-	glog.Debugf("(%s) Sent %d bytes in %d messages.", this.cid(), this.outStat.bytes, this.outStat.msgs)
+	Log.Debugc(func() string {
+		return fmt.Sprintf("(%s) Received %d bytes in %d messages.", this.cid(), this.inStat.bytes, this.inStat.msgs)
+	})
+	Log.Debugc(func() string {
+		return fmt.Sprintf("(%s) Sent %d bytes in %d messages.", this.cid(), this.outStat.bytes, this.outStat.msgs)
+	})
 
 	// Unsubscribe from all the topics for this client, only for the server side though
 	if !this.client && this.sess != nil {
 		topics, _, err := this.sess.Topics()
 		if err != nil {
-			glog.Errorf("(%s/%d): %v", this.cid(), this.id, err)
+			Log.Errorc(func() string { return fmt.Sprintf("(%s/%d): %v", this.cid(), this.id, err) })
 		} else {
 			for _, t := range topics {
 				if err := this.topicsMgr.Unsubscribe([]byte(t), &this.onpub); err != nil {
-					glog.Errorf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err)
+					Log.Errorc(func() string { return fmt.Sprintf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err) })
 				}
 			}
 		}
@@ -239,7 +259,9 @@ func (this *service) stop() {
 
 	// Publish will message if WillFlag is set. Server side only.
 	if !this.client && this.sess.Cmsg.WillFlag() {
-		glog.Infof("(%s) service/stop: connection unexpectedly closed. Sending Will.", this.cid())
+		Log.Infoc(func() string {
+			return fmt.Sprintf("(%s) service/stop: connection unexpectedly closed. Sending Will.", this.cid())
+		})
 		this.onPublish(this.sess.Will)
 	}
 
@@ -259,8 +281,8 @@ func (this *service) stop() {
 }
 
 func (this *service) publish(msg *message.PublishMessage, onComplete OnCompleteFunc) error {
-	//glog.Debugf("service/publish: Publishing %s", msg)
-	//   glog.Errorf("msg is : %v", msg)
+	//Log.Debugc(func() string{ return fmt.Sprintf("service/publish: Publishing %s", msg)})
+	//   Log.Errorc(func() string{ return fmt.Sprintf("msg is : %v", msg)})
 	_, err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)

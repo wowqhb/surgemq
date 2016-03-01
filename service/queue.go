@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/surgemq/message"
 	"net"
 )
@@ -57,19 +58,39 @@ func init() {
 			case topic := <-OfflineTopicGetProcessor:
 				OfflineTopicGetChannel <- OfflineTopicQueue[topic]
 			case topic := <-OfflineTopicCleanProcessor:
+				Log.Debugc(func() string {
+					return fmt.Sprintf("clean offlie topic queue: %s", topic)
+				})
+
 				OfflineTopicQueue[topic] = nil
 			case msg := <-OfflineTopicQueueProcessor:
 				topic := string(msg.Topic())
 				new_msg_queue := append(OfflineTopicQueue[topic], msg.Payload())
 				length := len(new_msg_queue)
 				if length > Max_message_queue {
+					Log.Debugc(func() string {
+						return fmt.Sprintf("add offline message to the topic: %s, and remove %d old messages.",
+							topic,
+							length-Max_message_queue,
+						)
+					})
+
 					OfflineTopicQueue[topic] = new_msg_queue[length-Max_message_queue:]
 				} else {
+					Log.Debugc(func() string {
+						return fmt.Sprintf("add offline message to the topic: %s", topic)
+					})
+
 					OfflineTopicQueue[topic] = new_msg_queue
 				}
 
 			case client := <-ClientMapProcessor:
 				client_id := client.Name
+
+				Log.Debugc(func() string {
+					return fmt.Sprintf("client connected with same client_id: %s. close old connection.", client_id)
+				})
+
 				if ClientMap[client_id] != nil {
 					(*ClientMap[client_id]).Close()
 				}

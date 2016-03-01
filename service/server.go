@@ -27,14 +27,17 @@ import (
 	"time"
 
 	"github.com/nagae-memooff/config"
+	log "github.com/nagae-memooff/log4go"
 	"github.com/nagae-memooff/surgemq/auth"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
-	"github.com/surge/glog"
 	"github.com/surgemq/message"
 )
 
 var (
+	Log      log.Logger
+	LogLevel log.Level
+
 	ErrInvalidConnectionType  error = errors.New("service: Invalid connection type")
 	ErrInvalidSubscriber      error = errors.New("service: Invalid subscriber")
 	ErrBufferNotReady         error = errors.New("service: buffer is not ready")
@@ -125,6 +128,7 @@ func (this *Server) ListenAndServe() error {
 	defer atomic.CompareAndSwapInt32(&this.running, 1, 0)
 
 	if !atomic.CompareAndSwapInt32(&this.running, 0, 1) {
+		Log.Error("server/ListenAndServe: Server is already running")
 		return fmt.Errorf("server/ListenAndServe: Server is already running")
 	}
 
@@ -137,17 +141,17 @@ func (this *Server) ListenAndServe() error {
 		go func() {
 			cer, err := tls.LoadX509KeyPair(config.Get("ssl_cert"), config.Get("ssl_key"))
 			if err != nil {
-				glog.Error(err)
+				Log.Error(err)
 				panic(err)
 			}
 			tls_config := &tls.Config{Certificates: []tls.Certificate{cer}}
 			ssl_host := fmt.Sprintf("%s:%s", config.GetMulti("ssl_listen_addr", "ssl_port")...)
 			ssl_ln, err := tls.Listen("tcp", ssl_host, tls_config)
 			if err != nil {
-				glog.Error(err)
+				Log.Error(err)
 				panic(err)
 			}
-			fmt.Printf("listening ssl: %v\n", ssl_host)
+			Log.Info("listening ssl: %v", ssl_host)
 
 			defer ssl_ln.Close()
 			var tempDelay time.Duration // how long to sleep on accept failure
@@ -165,7 +169,7 @@ func (this *Server) ListenAndServe() error {
 						if max := 1 * time.Second; tempDelay > max {
 							tempDelay = max
 						}
-						glog.Errorf("server/ListenAndServe: Accept ssl error: %v; retrying in %v", err, tempDelay)
+						Log.Error("server/ListenAndServe: Accept ssl error: %v; retrying in %v", err, tempDelay)
 						time.Sleep(tempDelay)
 						continue
 					}
@@ -183,11 +187,11 @@ func (this *Server) ListenAndServe() error {
 
 			this.ln, err = net.Listen("tcp", tcp_host)
 			if err != nil {
-				glog.Error(err)
+				Log.Error(err)
 				panic(err)
 				//         return
 			}
-			fmt.Printf("listening tcp: %v\n", tcp_host)
+			Log.Info("listening tcp: %v", tcp_host)
 
 			defer this.ln.Close()
 			var tempDelay time.Duration // how long to sleep on accept failure
@@ -206,7 +210,7 @@ func (this *Server) ListenAndServe() error {
 						if max := 1 * time.Second; tempDelay > max {
 							tempDelay = max
 						}
-						glog.Errorf("server/ListenAndServe: Accept error: %v; retrying in %v", err, tempDelay)
+						Log.Error("server/ListenAndServe: Accept error: %v; retrying in %v", err, tempDelay)
 						time.Sleep(tempDelay)
 						continue
 					}
@@ -235,7 +239,7 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 
 	//	if msg.Retain() {
 	//		if err = this.topicsMgr.Retain(msg); err != nil {
-	//			glog.Errorf("Error retaining message: %v", err)
+	//			Log.Errorc(func() string{ return fmt.Sprintf("Error retaining message: %v", err)})
 	//		}
 	//	}
 
@@ -246,12 +250,16 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 
 	//   msg.SetRetain(false)
 
-	//glog.Debugf("(server) Publishing to topic %q and %d subscribers", string(msg.Topic()), len(this.subs))
-	for _, s := range this.subs {
+	subs := <-SubscribersSliceQueue
+	Log.Debugc(func() string {
+		return fmt.Sprintf("(server) Publishing to topic %s and %d subscribers", string(msg.Topic()), len(subs))
+	})
+
+	for _, s := range subs {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
-				glog.Errorf("Invalid onPublish Function")
+				Log.Error("Invalid onPublish Function")
 			} else {
 				err = (*fn)(msg)
 			}
@@ -273,7 +281,7 @@ func (this *Server) Close() error {
 	this.ln.Close()
 
 	for _, svc := range this.svcs {
-		glog.Infof("Stopping service %d", svc.id)
+		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
 		svc.stop()
 	}
 
@@ -330,7 +338,7 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	req, err := getConnectMessage(conn)
 	if err != nil {
 		if cerr, ok := err.(message.ConnackCode); ok {
-			//glog.Debugf("request   message: %s\nresponse message: %s\nerror           : %v", mreq, resp, err)
+			//Log.Debugc(func() string{ return fmt.Sprintf("request   message: %s\nresponse message: %s\nerror           : %v", mreq, resp, err)})
 			resp.SetReturnCode(cerr)
 			resp.SetSessionPresent(false)
 			writeMessage(conn, resp)
@@ -340,6 +348,9 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 
 	// Authenticate the user, if error, return error and exit
 	if err = this.authMgr.Authenticate(string(req.Username()), string(req.Password())); err != nil {
+		Log.Infoc(func() string {
+			return fmt.Sprintf("client auth failed. username: %s, client_id: %s", req.Username(), req.ClientId())
+		})
 		resp.SetReturnCode(message.ErrBadUsernameOrPassword)
 		resp.SetSessionPresent(false)
 		writeMessage(conn, resp)
@@ -364,7 +375,8 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 		topicsMgr: this.topicsMgr,
 	}
 
-	c_hash := &ClientHash{Name: string(req.ClientId()), Conn: &conn}
+	c_id := string(req.ClientId())
+	c_hash := &ClientHash{Name: c_id, Conn: &conn}
 	ClientMapProcessor <- c_hash
 
 	err = this.getSession(svc, req, resp)
@@ -381,7 +393,7 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	svc.inStat.increment(int64(req.Len()))
 	svc.outStat.increment(int64(resp.Len()))
 
-	if err := svc.start(); err != nil {
+	if err := svc.start(c_id); err != nil {
 		svc.stop()
 		return nil, err
 	}
@@ -390,7 +402,9 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	//this.svcs = append(this.svcs, svc)
 	//this.mu.Unlock()
 
-	glog.Infof("(%s) server/handleConnection: Connection established.", svc.cid())
+	Log.Infoc(func() string {
+		return fmt.Sprintf("client %s connected successfully.", c_id)
+	})
 
 	return svc, nil
 }

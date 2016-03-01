@@ -125,7 +125,7 @@ func (this *Client) Connect(uri string, msg *message.ConnectMessage) (err error)
 		return err
 	}
 
-	if err := this.svc.start(); err != nil {
+	if err := this.svc.start(""); err != nil {
 		this.svc.stop()
 		return err
 	}
