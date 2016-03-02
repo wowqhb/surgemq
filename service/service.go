@@ -33,7 +33,9 @@ type (
 )
 
 type stat struct {
+	//消息索引位置；猜测应该是个序号
 	bytes int64
+	//消息数
 	msgs  int64
 }
 
@@ -89,6 +91,7 @@ type service struct {
 	wgStopped sync.WaitGroup
 
 	// writeMessage mutex - serializes writes to the outgoing buffer.
+	//读写互斥锁
 	wmu sync.Mutex
 	rmu sync.Mutex
 
@@ -100,9 +103,11 @@ type service struct {
 	done chan struct{}
 
 	// Incoming data buffer. Bytes are read from the connection and put in here.
+	//从connection里读出来的byte数组放入in这个buffer里面
 	in *buffer
 
 	// Outgoing data buffer. Bytes written here are in turn written out to the connection.
+	//将要写入到connection的数据（byte数组），放入到out这个buffer里面
 	out *buffer
 
 	// onpub is the method that gets added to the topic subscribers list by the
@@ -112,12 +117,17 @@ type service struct {
 	// For the server, when this method is called, it means there's a message that
 	// should be published to the client on the other end of this connection. So we
 	// will call publish() to send the message.
+	//从上面的描述看onpub类似于回调函数
 	onpub OnPublishFunc
 
+	//入buffer状态
 	inStat  stat
+	//出buffer状态
 	outStat stat
 
+	//字面意义：临时入buffer数据
 	intmp  []byte
+	//字面意义：临时出buffer数据
 	outtmp []byte
 
 	subs  []interface{}
@@ -125,6 +135,9 @@ type service struct {
 	rmsgs []*message.PublishMessage
 }
 
+/**
+启动service服务
+ */
 func (this *service) start(client_id string) error {
 	var err error
 
