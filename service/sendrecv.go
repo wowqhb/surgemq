@@ -149,7 +149,6 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	var (
 		err error
 		msg message.Message
-		ok bool
 	)
 
 	if this.in == nil {
@@ -157,10 +156,26 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 		return nil, err
 	}
 
-	msg, ok = this.in.ReadBuffer()
-	for ; !ok; msg, ok = this.in.ReadBuffer() {
+	b, ok := this.in.ReadBuffer()
+	for ; !ok; b, ok = this.in.ReadBuffer() {
 		runtime.Gosched()
 	}
+	msg, err = mtype.New()
+	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s)NewMessage  Error processing: %v", this.cid(), err)
+		})
+		return nil, err
+	}
+
+	_, err = msg.Decode(*b)
+	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) Decode Error processing: %v", this.cid(), err)
+		})
+		return nil, err
+	}
+
 	return msg, err
 }
 
@@ -182,7 +197,12 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	// to this client, then they will all block. However, this will do for now.
 	//
 	// FIXME: Try to find a better way than a mutex...if possible.
-	for ok := this.out.WriteBuffer(msg); !ok; ok = this.out.WriteBuffer(msg) {
+	b := make([]byte, msg.Len())
+	_, err := msg.Encode(b)
+	if err != nil {
+		return err
+	}
+	for ok := this.out.WriteBuffer(&b); !ok; ok = this.out.WriteBuffer(&b) {
 		runtime.Gosched()
 	}
 	this.outStat.increment(int64(1))

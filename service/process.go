@@ -65,17 +65,37 @@ func (this *service) processor() {
 
 	for {
 		// 1. Find out what message is next and the size of the message
-		msg, ok := this.in.ReadBuffer()
+		b, ok := this.in.ReadBuffer()
 		if !ok {
 			runtime.Gosched()
 			continue
+		}
+
+		mtype := message.MessageType((*b)[0] >> 4)
+		/****************/
+		var msg message.Message
+		var err error
+		msg, err = mtype.New()
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s)NewMessage  Error processing %s: %v", this.cid(), msg.Name(), err)
+			})
+			return
+		}
+
+		_, err = msg.Decode(*b)
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Decode Error processing %s: %v", this.cid(), msg.Name(), err)
+			})
+			return
 		}
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
 
 		this.inStat.increment(int64(1))
 
 		// 5. Process the read message
-		err := this.processIncoming(msg)
+		err = this.processIncoming(msg)
 		if err != nil {
 			if err != errDisconnect {
 				Log.Errorc(func() string {

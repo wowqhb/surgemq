@@ -20,7 +20,7 @@ import (
 	"io"
 	"sync/atomic"
 	"runtime"
-	"github.com/surgemq/message"
+//"github.com/surgemq/message"
 	"encoding/binary"
 )
 
@@ -47,12 +47,12 @@ const (
 bingbuffer结构体
  */
 type buffer struct {
-	readIndex  int64             //读序号
-	writeIndex int64             //写序号
-	ringBuffer []message.Message //环形buffer指针数组
-	bufferSize int64             //初始化环形buffer指针数组大小
-	mask       int64             //掩码：bufferSize-1
-	done       int64             //是否完成
+	readIndex  int64     //读序号
+	writeIndex int64     //写序号
+	ringBuffer []*[]byte //环形buffer指针数组
+	bufferSize int64     //初始化环形buffer指针数组大小
+	mask       int64     //掩码：bufferSize-1
+	done       int64     //是否完成
 }
 
 
@@ -76,7 +76,7 @@ func newBuffer(size int64) (*buffer, error) {
 	return &buffer{
 		readIndex: int64(0), //读序号
 		writeIndex: int64(0), //写序号
-		ringBuffer: make([]message.Message, size), //环形buffer指针数组
+		ringBuffer: make([]*[]byte, size), //环形buffer指针数组
 		bufferSize: size, //初始化环形buffer指针数组大小
 		mask:size - 1,
 	}, nil
@@ -101,7 +101,7 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
-func (this *buffer)ReadBuffer() (p message.Message, ok bool) {
+func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 	ok = true
 	p = nil
 
@@ -125,11 +125,12 @@ func (this *buffer)ReadBuffer() (p message.Message, ok bool) {
 	return p, ok
 }
 
+
 /**
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in message.Message) (ok bool) {
+func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
 	ok = true
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
@@ -215,14 +216,14 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_ := int64(remlen)
 		total = remlen_ + int64(len)
 
-		mtype := message.MessageType(b[0] >> 4)
+		//mtype := message.MessageType(b[0] >> 4)
 		/****************/
-		var msg message.Message
-
-		msg, err = mtype.New()
-		if err != nil {
-			return 0, err
-		}
+		//var msg message.Message
+		//
+		//msg, err = mtype.New()
+		//if err != nil {
+		//	return 0, err
+		//}
 		b_ := make([]byte, remlen_)
 		_, err = r.Read(b_[0:])
 		if err != nil {
@@ -230,14 +231,14 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		b = append(b, b_...)
-		n, err = msg.Decode(b)
-		if err != nil {
-			return 0, err
-		}
+		//n, err = msg.Decode(b)
+		//if err != nil {
+		//	return 0, err
+		//}
 
 		/*************************/
 
-		for !this.WriteBuffer(msg) {
+		for !this.WriteBuffer(&b) {
 			runtime.Gosched()
 		}
 
@@ -257,26 +258,26 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			return total, io.EOF
 		}
 
-		msg, ok := this.ReadBuffer()
+		p, ok := this.ReadBuffer()
 		if !ok {
 			runtime.Gosched()
 		}
-
-		Log.Errorc(func() string {
-			return fmt.Sprintf("msg::" + msg.Name())
-		})
-
-		p := make([]byte, msg.Len())
-		_, err := msg.Encode(p)
-		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("msg.Encode(p)")
-			})
-			return total, io.EOF
-		}
+		//
+		//Log.Errorc(func() string {
+		//	return fmt.Sprintf("msg::" + msg.Name())
+		//})
+		//
+		//p := make([]byte, msg.Len())
+		//_, err := msg.Encode(p)
+		//if err != nil {
+		//	Log.Errorc(func() string {
+		//		return fmt.Sprintf("msg.Encode(p)")
+		//	})
+		//	return total, io.EOF
+		//}
 		// There's some data, let's process it first
-		if len(p) > 0 {
-			n, err := w.Write(p)
+		if len(*p) > 0 {
+			n, err := w.Write(*p)
 			total += int64(n)
 			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
 
@@ -288,9 +289,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			}
 		}
 
-		if err != nil {
-			return total, err
-		}
+		return total, nil
 	}
 }
 
