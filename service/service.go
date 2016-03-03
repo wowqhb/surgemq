@@ -171,9 +171,10 @@ func (this *service) start(client_id string) error {
 			return fmt.Sprintf("client_id %s is not master", client_id)
 		})
 		this.in, err = newBuffer(DeviceInBufferSize)
+
 		if err != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("make new DeviceInBufferSize for client: %s falure", client_id)
+				return fmt.Sprintf("make new DeviceInBufferSize error for client: %s", client_id)
 			})
 			return err
 		}
@@ -182,7 +183,7 @@ func (this *service) start(client_id string) error {
 		this.out, err = newBuffer(DeviceOutBufferSize)
 		if err != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("make new DeviceOutBufferSize for client: %s falure", client_id)
+				return fmt.Sprintf("make new DeviceOutBufferSize error for client: %s", client_id)
 			})
 			return err
 		}
