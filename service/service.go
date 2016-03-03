@@ -147,6 +147,9 @@ func (this *service) start(client_id string) error {
 	})
 
 	if strings.Contains(client_id, "master") {
+		Log.Debugc(func() string {
+			return fmt.Sprintf("client_id %s is master", client_id)
+		})
 		this.in, err = newBuffer(MasterInBufferSize)
 		if err != nil {
 			Log.Errorc(func() string {
@@ -164,6 +167,9 @@ func (this *service) start(client_id string) error {
 			return err
 		}
 	} else {
+		Log.Debugc(func() string {
+			return fmt.Sprintf("client_id %s is not master", client_id)
+		})
 		this.in, err = newBuffer(DeviceInBufferSize)
 		if err != nil {
 			Log.Errorc(func() string {
