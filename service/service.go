@@ -17,7 +17,7 @@ package service
 import (
 	"fmt"
 	"io"
-	//   "runtime/debug"
+//   "runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -51,15 +51,15 @@ var (
 type service struct {
 	// The ID of this service, it's not related to the Client ID, just a number that's
 	// incremented for every new service.
-	id uint64
+	id             uint64
 
 	// Is this a client or server. It's set by either Connect (client) or
 	// HandleConnection (server).
-	client bool
+	client         bool
 
 	// The number of seconds to keep the connection live if there's no data.
 	// If not set then default to 5 mins.
-	keepAlive int
+	keepAlive      int
 
 	// The number of seconds to wait for the CONNACK message before disconnecting.
 	// If not set then default to 2 seconds.
@@ -67,48 +67,46 @@ type service struct {
 
 	// The number of seconds to wait for any ACK messages before failing.
 	// If not set then default to 20 seconds.
-	ackTimeout int
+	ackTimeout     int
 
 	// The number of times to retry sending a packet if ACK is not received.
 	// If no set then default to 3 retries.
 	timeoutRetries int
 
 	// Network connection for this service
-	conn io.Closer
+	conn           io.Closer
 
 	// Session manager for tracking all the clients
-	sessMgr *sessions.Manager
+	sessMgr        *sessions.Manager
 
 	// Topics manager for all the client subscriptions
-	topicsMgr *topics.Manager
+	topicsMgr      *topics.Manager
 
 	// sess is the session object for this MQTT session. It keeps track session variables
 	// such as ClientId, KeepAlive, Username, etc
-	sess *sessions.Session
+	sess           *sessions.Session
 
 	// Wait for the various goroutines to finish starting and stopping
-	wgStarted sync.WaitGroup
-	wgStopped sync.WaitGroup
+	wgStarted      sync.WaitGroup
+	wgStopped      sync.WaitGroup
 
 	// writeMessage mutex - serializes writes to the outgoing buffer.
 	//读写互斥锁
-	wmu sync.Mutex
-	rmu sync.Mutex
+	wmu            sync.Mutex
+	rmu            sync.Mutex
 
 	// Whether this is service is closed or not.
-	closed int64
+	closed         int64
 
 	// Quit signal for determining when this service should end. If channel is closed,
 	// then exit.
-	done chan struct{}
+	done           chan struct{}
 
-	// Incoming data buffer. Bytes are read from the connection and put in here.
-	//从connection里读出来的byte数组放入in这个buffer里面
-	in *buffer
+	//从connection里读出来的message.Message数组放入in这个buffer里面
+	in             *buffer
 
-	// Outgoing data buffer. Bytes written here are in turn written out to the connection.
-	//将要写入到connection的数据（byte数组），放入到out这个buffer里面
-	out *buffer
+	//将要写入到connection的数据（message.Message数组），放入到out这个buffer里面
+	out            *buffer
 
 	// onpub is the method that gets added to the topic subscribers list by the
 	// processSubscribe() method. When the server finishes the ack cycle for a
@@ -118,21 +116,21 @@ type service struct {
 	// should be published to the client on the other end of this connection. So we
 	// will call publish() to send the message.
 	//从上面的描述看onpub类似于回调函数
-	onpub OnPublishFunc
+	onpub          OnPublishFunc
 
 	//入buffer状态
-	inStat  stat
+	inStat         stat
 	//出buffer状态
-	outStat stat
+	outStat        stat
 
 	//字面意义：临时入buffer数据
-	intmp  []byte
+	intmp          []byte
 	//字面意义：临时出buffer数据
-	outtmp []byte
+	outtmp         []byte
 
-	subs  []interface{}
-	qoss  []byte
-	rmsgs []*message.PublishMessage
+	subs           []interface{}
+	qoss           []byte
+	rmsgs          []*message.PublishMessage
 }
 
 /**
@@ -144,7 +142,9 @@ func (this *service) start(client_id string) error {
 	//   debug.PrintStack()
 	// Create the incoming ring buffer
 	// TODO: 如果是master_开头的，buffer大一些
-	Log.Debugc(func() string { return fmt.Sprintf("make new buffer for client: %s", client_id) })
+	Log.Debugc(func() string {
+		return fmt.Sprintf("make new buffer for client: %s", client_id)
+	})
 
 	if strings.Contains(client_id, "master") {
 		this.in, err = newBuffer(MasterInBufferSize)
@@ -175,7 +175,9 @@ func (this *service) start(client_id string) error {
 		// Creat the onPublishFunc so it can be used for published messages
 		this.onpub = func(msg *message.PublishMessage) error {
 			if err := this.publish(msg, nil); err != nil {
-				Log.Errorc(func() string { return fmt.Sprintf("service/onPublish: Error publishing message: %v", err) })
+				Log.Errorc(func() string {
+					return fmt.Sprintf("service/onPublish: Error publishing message: %v", err)
+				})
 				return err
 			}
 
@@ -222,7 +224,9 @@ func (this *service) stop() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+			})
 		}
 	}()
 
@@ -233,13 +237,17 @@ func (this *service) stop() {
 
 	// Close quit channel, effectively telling all the goroutines it's time to quit
 	if this.done != nil {
-		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.done", this.cid()) })
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) closing this.done", this.cid())
+		})
 		close(this.done)
 	}
 
 	// Close the network connection
 	if this.conn != nil {
-		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) closing this.conn", this.cid())
+		})
 		this.conn.Close()
 	}
 
@@ -260,11 +268,15 @@ func (this *service) stop() {
 	if !this.client && this.sess != nil {
 		topics, _, err := this.sess.Topics()
 		if err != nil {
-			Log.Errorc(func() string { return fmt.Sprintf("(%s/%d): %v", this.cid(), this.id, err) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s/%d): %v", this.cid(), this.id, err)
+			})
 		} else {
 			for _, t := range topics {
 				if err := this.topicsMgr.Unsubscribe([]byte(t), &this.onpub); err != nil {
-					Log.Errorc(func() string { return fmt.Sprintf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err) })
+					Log.Errorc(func() string {
+						return fmt.Sprintf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err)
+					})
 				}
 			}
 		}
@@ -296,7 +308,7 @@ func (this *service) stop() {
 func (this *service) publish(msg *message.PublishMessage, onComplete OnCompleteFunc) error {
 	//Log.Debugc(func() string{ return fmt.Sprintf("service/publish: Publishing %s", msg)})
 	//   Log.Errorc(func() string{ return fmt.Sprintf("msg is : %v", msg)})
-	_, err := this.writeMessage(msg)
+	err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -324,7 +336,7 @@ func (this *service) subscribe(msg *message.SubscribeMessage, onComplete OnCompl
 		return fmt.Errorf("onPublish function is nil. No need to subscribe.")
 	}
 
-	_, err := this.writeMessage(msg)
+	err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -400,7 +412,7 @@ func (this *service) subscribe(msg *message.SubscribeMessage, onComplete OnCompl
 }
 
 func (this *service) unsubscribe(msg *message.UnsubscribeMessage, onComplete OnCompleteFunc) error {
-	_, err := this.writeMessage(msg)
+	err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -464,7 +476,7 @@ func (this *service) unsubscribe(msg *message.UnsubscribeMessage, onComplete OnC
 func (this *service) ping(onComplete OnCompleteFunc) error {
 	msg := message.NewPingreqMessage()
 
-	_, err := this.writeMessage(msg)
+	err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}

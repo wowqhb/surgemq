@@ -17,26 +17,100 @@ package service
 import (
 	"encoding/base64"
 	"github.com/pquerna/ffjson/ffjson"
-	//   "encoding/json"
+//   "encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"strings"
 	"time"
 
-	//   "runtime/debug"
+//   "runtime/debug"
 	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/surgemq/message"
+	"runtime"
 )
 
 var (
-	errDisconnect  = errors.New("Disconnect")
+	errDisconnect = errors.New("Disconnect")
 	MsgPendingTime time.Duration
 )
 
+/**
+2016.03.03 添加
+ */
+// processor() reads messages from the incoming buffer and processes them
+func (this *service) processor() {
+	defer func() {
+		// Let's recover from panic
+		if r := recover(); r != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+			})
+		}
+
+		this.wgStopped.Done()
+		this.stop()
+
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) Stopping processor", this.cid())
+		})
+	}()
+
+	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting processor", this.cid())})
+	//   Log.Errorc(func() string{ return fmt.Sprintf("PendingQueue: %v", PendingQueue[0:10])})
+
+	this.wgStarted.Done()
+
+	for {
+		// 1. Find out what message is next and the size of the message
+		msg, ok := this.in.ReadBuffer()
+		if !ok {
+			runtime.Gosched()
+			continue
+		}
+		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
+
+		this.inStat.increment(int64(1))
+
+		// 5. Process the read message
+		err := this.processIncoming(msg)
+		if err != nil {
+			if err != errDisconnect {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) Error processing %s: %v", this.cid(), msg.Name(), err)
+				})
+			} else {
+				return
+			}
+		}
+
+		// 7. We should commit the bytes in the buffer so we can move on
+		//_, err = this.in.ReadCommit(total)
+		//if err != nil {
+		//	if err != io.EOF {
+		//		Log.Errorc(func() string {
+		//			return fmt.Sprintf("(%s) Error committing %d read bytes: %v", this.cid(), total, err)
+		//		})
+		//	}
+		//	return
+		//}
+
+		// 7. Check to see if done is closed, if so, exit
+		if this.isDone() /*&& this.in.Len() == 0*/ {
+			return
+		}
+
+		//if this.inStat.msgs%1000 == 0 {
+		//	Log.Debugc(func() string{ return fmt.Sprintf("(%s) Going to process message %d", this.cid(), this.inStat.msgs)})
+		//}
+	}
+}
+
+
+/*
+2016.03.03 注释掉
 // processor() reads messages from the incoming buffer and processes them
 func (this *service) processor() {
 	defer func() {
@@ -128,7 +202,7 @@ func (this *service) processor() {
 		//	Log.Debugc(func() string{ return fmt.Sprintf("(%s) Going to process message %d", this.cid(), this.inStat.msgs)})
 		//}
 	}
-}
+}*/
 
 func (this *service) processIncoming(msg message.Message) error {
 	var err error = nil
@@ -160,7 +234,7 @@ func (this *service) processIncoming(msg message.Message) error {
 
 		resp := message.NewPubrelMessage()
 		resp.SetPacketId(msg.PacketId())
-		_, err = this.writeMessage(resp)
+		err = this.writeMessage(resp)
 
 	case *message.PubrelMessage:
 		// For PUBREL message, it means QoS 2, we should send to ack queue, and send back PUBCOMP
@@ -172,7 +246,7 @@ func (this *service) processIncoming(msg message.Message) error {
 
 		resp := message.NewPubcompMessage()
 		resp.SetPacketId(msg.PacketId())
-		_, err = this.writeMessage(resp)
+		err = this.writeMessage(resp)
 
 	case *message.PubcompMessage:
 		// For PUBCOMP message, it means QoS 2, we should send to ack queue
@@ -203,7 +277,7 @@ func (this *service) processIncoming(msg message.Message) error {
 	case *message.PingreqMessage:
 		// For PINGREQ message, we should send back PINGRESP
 		resp := message.NewPingrespMessage()
-		_, err = this.writeMessage(resp)
+		err = this.writeMessage(resp)
 
 	case *message.PingrespMessage:
 		this.sess.Pingack.Ack(msg)
@@ -276,7 +350,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			}
 
 		case message.PUBACK, message.PUBCOMP, message.SUBACK, message.UNSUBACK, message.PINGRESP:
-			Log.Debugc(func() string { return fmt.Sprintf("process/processAcked: %s", ack) })
+			Log.Debugc(func() string {
+				return fmt.Sprintf("process/processAcked: %s", ack)
+			})
 			// If ack is PUBACK, that means the QoS 1 message sent by this service got
 			// ack'ed. There's nothing to do other than calling onComplete() below.
 
@@ -295,7 +371,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			err = nil
 
 		default:
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State)
+			})
 			continue
 		}
 
@@ -308,7 +386,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 				})
 			} else if onComplete != nil {
 				if err := onComplete(msg, ack, nil); err != nil {
-					Log.Errorc(func() string { return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err) })
+					Log.Errorc(func() string {
+						return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err)
+					})
 				}
 			}
 		}
@@ -327,7 +407,7 @@ func (this *service) processPublish(msg *message.PublishMessage) error {
 		resp := message.NewPubrecMessage()
 		resp.SetPacketId(msg.PacketId())
 
-		_, err := this.writeMessage(resp)
+		err := this.writeMessage(resp)
 
 		err = this._process_publish(msg)
 		return err
@@ -336,7 +416,7 @@ func (this *service) processPublish(msg *message.PublishMessage) error {
 		resp := message.NewPubackMessage()
 		resp.SetPacketId(msg.PacketId())
 
-		if _, err := this.writeMessage(resp); err != nil {
+		if err := this.writeMessage(resp); err != nil {
 			return err
 		}
 
@@ -387,7 +467,7 @@ func (this *service) processSubscribe(msg *message.SubscribeMessage) error {
 		return err
 	}
 
-	if _, err := this.writeMessage(resp); err != nil {
+	if err := this.writeMessage(resp); err != nil {
 		return err
 	}
 
@@ -419,7 +499,7 @@ func (this *service) processUnsubscribe(msg *message.UnsubscribeMessage) error {
 	resp := message.NewUnsubackMessage()
 	resp.SetPacketId(msg.PacketId())
 
-	_, err := this.writeMessage(resp)
+	err := this.writeMessage(resp)
 	return err
 }
 
@@ -437,7 +517,9 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 	subs := _get_temp_subs()
 	err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &subs, &this.qoss)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err)
+		})
 		return err
 	}
 
@@ -451,7 +533,9 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
-				Log.Errorc(func() string { return fmt.Sprintf("Invalid onPublish Function: %T", s) })
+				Log.Errorc(func() string {
+					return fmt.Sprintf("Invalid onPublish Function: %T", s)
+				})
 				return fmt.Errorf("Invalid onPublish Function")
 			} else {
 				(*fn)(msg)
@@ -490,7 +574,9 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 
 	payload_bytes, err := base64.StdEncoding.DecodeString(payload_base64)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", payload_base64) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't decode payload: %s", payload_base64)
+		})
 	}
 
 	err = ffjson.Unmarshal([]byte(payload_bytes), &badge_message)
@@ -518,13 +604,17 @@ func (this *service) onGroupPublish(msg *message.PublishMessage) (err error) {
 
 	err = ffjson.Unmarshal(msg.Payload(), &broadcast_msg)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't parse message json: %s", msg.Payload()) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't parse message json: %s", msg.Payload())
+		})
 		return
 	}
 
 	payload, err = base64.StdEncoding.DecodeString(broadcast_msg.Payload)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload)
+		})
 		return
 	}
 
