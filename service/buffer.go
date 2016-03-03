@@ -177,6 +177,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if n > 0 {
 			total += int64(n)
 			if err != nil {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("ReadFrom ERROR(0)")
+				})
 				return total, err
 			}
 		}
@@ -195,6 +198,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			// Peek cnt bytes from the input buffer.
 			_, err := r.Read(b[cnt:cnt + 1])
 			if err != nil {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("ReadFrom ERROR(1)")
+				})
 				return 0, err
 			}
 
@@ -224,10 +230,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		_, err = r.Read(b[len:total])
 		if err != nil {
+			Log.Infoc(func() string {
+				return fmt.Sprintf("ReadFrom ERROR(2)")
+			})
 			return 0, err
 		}
 		n, err = msg.Decode(b)
 		if err != nil {
+			Log.Infoc(func() string {
+				return fmt.Sprintf("ReadFrom ERROR(3)")
+			})
 			return 0, err
 		}
 
