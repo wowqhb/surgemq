@@ -238,7 +238,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return 0, err
 		}
 
-		b = append(b, b_)
+		b = append(b, b_...)
 		n, err = msg.Decode(b)
 		if err != nil {
 			Log.Infoc(func() string {
