@@ -22,7 +22,6 @@ import (
 	"runtime"
 	"github.com/surgemq/message"
 	"encoding/binary"
-	"strconv"
 )
 
 var (
@@ -48,12 +47,12 @@ const (
 bingbuffer结构体
  */
 type buffer struct {
-	readIndex  int64             //读序号
-	writeIndex int64             //写序号
-	ringBuffer []message.Message //环形buffer指针数组
-	bufferSize int64             //初始化环形buffer指针数组大小
-	mask       int64             //掩码：bufferSize-1
-	done       int64             //是否完成
+	readIndex  int64         //读序号
+	writeIndex int64         //写序号
+	ringBuffer []interface{} //环形buffer指针数组
+	bufferSize int64         //初始化环形buffer指针数组大小
+	mask       int64         //掩码：bufferSize-1
+	done       int64         //是否完成
 }
 
 
@@ -69,7 +68,6 @@ func newBuffer(size int64) (*buffer, error) {
 	if size == 0 {
 		size = DefaultBufferSize
 	}
-	fmt.Printf("size=" + strconv.FormatInt(size, 10) + ",DefaultBufferSize=" + strconv.FormatInt(DefaultBufferSize, 10))
 	if !powerOfTwo64(size) {
 		fmt.Printf("Size must be power of two. Try %d.", roundUpPowerOfTwo64(size))
 		return nil, fmt.Errorf("Size must be power of two. Try %d.", roundUpPowerOfTwo64(size))
@@ -78,7 +76,7 @@ func newBuffer(size int64) (*buffer, error) {
 	return &buffer{
 		readIndex: int64(0), //读序号
 		writeIndex: int64(0), //写序号
-		ringBuffer: make([]message.Message, size), //环形buffer指针数组
+		ringBuffer: make([]interface{}, size), //环形buffer指针数组
 		bufferSize: size, //初始化环形buffer指针数组大小
 		mask:size - 1,
 	}, nil
@@ -103,7 +101,7 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
-func (this *buffer)ReadBuffer() (p message.Message, ok bool) {
+func (this *buffer)ReadBuffer() (p interface{}, ok bool) {
 	ok = true
 	p = nil
 
@@ -131,7 +129,7 @@ func (this *buffer)ReadBuffer() (p message.Message, ok bool) {
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in message.Message) (ok bool) {
+func (this *buffer)WriteBuffer(in interface{}) (ok bool) {
 	ok = true
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
