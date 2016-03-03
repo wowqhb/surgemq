@@ -149,23 +149,35 @@ func (this *service) start(client_id string) error {
 	if strings.Contains(client_id, "master") {
 		this.in, err = newBuffer(MasterInBufferSize)
 		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("make new MasterInBufferSize for client: %s falure", client_id)
+			})
 			return err
 		}
 
 		// Create the outgoing ring buffer
 		this.out, err = newBuffer(MasterOutBufferSize)
 		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("make new MasterOutBufferSize for client: %s falure", client_id)
+			})
 			return err
 		}
 	} else {
 		this.in, err = newBuffer(DeviceInBufferSize)
 		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("make new DeviceInBufferSize for client: %s falure", client_id)
+			})
 			return err
 		}
 
 		// Create the outgoing ring buffer
 		this.out, err = newBuffer(DeviceOutBufferSize)
 		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("make new DeviceOutBufferSize for client: %s falure", client_id)
+			})
 			return err
 		}
 	}
