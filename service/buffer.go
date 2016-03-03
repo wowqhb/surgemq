@@ -261,9 +261,17 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if !ok {
 			runtime.Gosched()
 		}
+
+		Log.Errorc(func() string {
+			return fmt.Sprintf("msg::" + msg.Name())
+		})
+
 		p := make([]byte, msg.Len())
 		_, err := msg.Encode(p)
 		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("msg.Encode(p)")
+			})
 			return total, io.EOF
 		}
 		// There's some data, let's process it first
@@ -273,6 +281,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
 
 			if err != nil {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("w.Write(p)")
+				})
 				return total, err
 			}
 		}
