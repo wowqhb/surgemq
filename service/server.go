@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net"
-	//   "net/url"
+//   "net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -35,23 +35,23 @@ import (
 )
 
 var (
-	Log      log.Logger
+	Log log.Logger
 	LogLevel log.Level
 
-	ErrInvalidConnectionType  error = errors.New("service: Invalid connection type")
-	ErrInvalidSubscriber      error = errors.New("service: Invalid subscriber")
-	ErrBufferNotReady         error = errors.New("service: buffer is not ready")
+	ErrInvalidConnectionType error = errors.New("service: Invalid connection type")
+	ErrInvalidSubscriber error = errors.New("service: Invalid subscriber")
+	ErrBufferNotReady error = errors.New("service: buffer is not ready")
 	ErrBufferInsufficientData error = errors.New("service: buffer has insufficient data.")
 )
 
 const (
-	DefaultKeepAlive        = 300
-	DefaultConnectTimeout   = 2
-	DefaultAckTimeout       = 20
-	DefaultTimeoutRetries   = 3
+	DefaultKeepAlive = 300
+	DefaultConnectTimeout = 2
+	DefaultAckTimeout = 20
+	DefaultTimeoutRetries = 3
 	DefaultSessionsProvider = "mem"
-	DefaultAuthenticator    = "mockSuccess"
-	DefaultTopicsProvider   = "mem"
+	DefaultAuthenticator = "mockSuccess"
+	DefaultTopicsProvider = "mem"
 )
 
 // Server is a library implementation of the MQTT server that, as best it can, complies
@@ -59,23 +59,23 @@ const (
 type Server struct {
 	// The number of seconds to keep the connection live if there's no data.
 	// If not set then default to 5 mins.
-	KeepAlive int
+	KeepAlive        int
 
 	// The number of seconds to wait for the CONNECT message before disconnecting.
 	// If not set then default to 2 seconds.
-	ConnectTimeout int
+	ConnectTimeout   int
 
 	// The number of seconds to wait for any ACK messages before failing.
 	// If not set then default to 20 seconds.
-	AckTimeout int
+	AckTimeout       int
 
 	// The number of times to retry sending a packet if ACK is not received.
 	// If no set then default to 3 retries.
-	TimeoutRetries int
+	TimeoutRetries   int
 
 	// Authenticator is the authenticator used to check username and password sent
 	// in the CONNECT message. If not set then default to "mockSuccess".
-	Authenticator string
+	Authenticator    string
 
 	// SessionsProvider is the session store that keeps all the Session objects.
 	// This is the store to check if CleanSession is set to 0 in the CONNECT message.
@@ -84,39 +84,39 @@ type Server struct {
 
 	// TopicsProvider is the topic store that keeps all the subscription topics.
 	// If not set then default to "mem".
-	TopicsProvider string
+	TopicsProvider   string
 
 	// authMgr is the authentication manager that we are going to use for authenticating
 	// incoming connections
-	authMgr *auth.Manager
+	authMgr          *auth.Manager
 
 	// sessMgr is the sessions manager for keeping track of the sessions
-	sessMgr *sessions.Manager
+	sessMgr          *sessions.Manager
 
 	// topicsMgr is the topics manager for keeping track of subscriptions
-	topicsMgr *topics.Manager
+	topicsMgr        *topics.Manager
 
 	// The quit channel for the server. If the server detects that this channel
 	// is closed, then it's a signal for it to shutdown as well.
-	quit chan struct{}
+	quit             chan struct{}
 
-	ln net.Listener
+	ln               net.Listener
 
 	// A list of services created by the server. We keep track of them so we can
 	// gracefully shut them down if they are still alive when the server goes down.
-	svcs []*service
+	svcs             []*service
 
 	// Mutex for updating svcs
-	mu sync.Mutex
+	mu               sync.Mutex
 
 	// A indicator on whether this server is running
-	running int32
+	running          int32
 
 	// A indicator on whether this server has already checked configuration
-	configOnce sync.Once
+	configOnce       sync.Once
 
-	subs []interface{}
-	qoss []byte
+	subs             []interface{}
+	qoss             []byte
 }
 
 // ListenAndServe listents to connections on the URI requested, and handles any
@@ -257,11 +257,11 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 
 	for _, s := range subs {
 		if s != nil {
-			fn, ok := s.(*OnPublishFunc)
+			ok := s.(*OnPublishFunc)
 			if !ok {
 				Log.Error("Invalid onPublish Function")
 			} else {
-				err = (*fn)(msg)
+				err = errors.New(msg)
 			}
 		}
 	}
@@ -281,7 +281,9 @@ func (this *Server) Close() error {
 	this.ln.Close()
 
 	for _, svc := range this.svcs {
-		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
+		Log.Infoc(func() string {
+			return fmt.Sprintf("Stopping service %d", svc.id)
+		})
 		svc.stop()
 	}
 
