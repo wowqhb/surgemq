@@ -108,105 +108,11 @@ func (this *service) processor() {
 	}
 }
 
-
-/*
-2016.03.03 注释掉
-// processor() reads messages from the incoming buffer and processes them
-func (this *service) processor() {
-	defer func() {
-		// Let's recover from panic
-		if r := recover(); r != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
-			})
-		}
-
-		this.wgStopped.Done()
-		this.stop()
-
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) Stopping processor", this.cid())
-		})
-	}()
-
-	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting processor", this.cid())})
-	//   Log.Errorc(func() string{ return fmt.Sprintf("PendingQueue: %v", PendingQueue[0:10])})
-
-	this.wgStarted.Done()
-
-	for {
-		// 1. Find out what message is next and the size of the message
-		//     this.rmu.Lock()
-		mtype, total, err := this.peekMessageSize()
-		if err != nil {
-			if err == io.EOF {
-				Log.Debugc(func() string {
-					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
-				})
-			} else {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error peeking next message size: %v", this.cid(), err)
-				})
-			}
-			return
-		}
-
-		msg, n, err := this.peekMessage(mtype, total)
-		if err != nil {
-			if err == io.EOF {
-				Log.Debugc(func() string {
-					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
-				})
-			} else {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error peeking next message: %v", this.cid(), err)
-				})
-			}
-			return
-		}
-		//     this.rmu.Unlock()
-
-		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
-
-		this.inStat.increment(int64(n))
-
-		// 5. Process the read message
-		err = this.processIncoming(msg)
-		if err != nil {
-			if err != errDisconnect {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error processing %s: %v", this.cid(), msg.Name(), err)
-				})
-			} else {
-				return
-			}
-		}
-
-		// 7. We should commit the bytes in the buffer so we can move on
-		_, err = this.in.ReadCommit(total)
-		if err != nil {
-			if err != io.EOF {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error committing %d read bytes: %v", this.cid(), total, err)
-				})
-			}
-			return
-		}
-
-		// 7. Check to see if done is closed, if so, exit
-		if this.isDone() && this.in.Len() == 0 {
-			return
-		}
-
-		//if this.inStat.msgs%1000 == 0 {
-		//	Log.Debugc(func() string{ return fmt.Sprintf("(%s) Going to process message %d", this.cid(), this.inStat.msgs)})
-		//}
-	}
-}*/
-
 func (this *service) processIncoming(msg message.Message) error {
 	var err error = nil
-	//   Log.Errorc(func() string{ return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T", this.subs, len(this.subs), msg)})
+	Log.Errorc(func() string {
+		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T", this.subs, len(this.subs), msg)
+	})
 
 	switch msg := (msg).(type) {
 	case *message.PublishMessage:
