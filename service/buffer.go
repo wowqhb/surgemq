@@ -69,7 +69,7 @@ func newBuffer(size int64) (*buffer, error) {
 	if size == 0 {
 		size = DefaultBufferSize
 	}
-	fmt.Printf("size=" + strconv.Itoa(size) + ",DefaultBufferSize=" + strconv.Itoa(DefaultBufferSize))
+	fmt.Printf("size=" + strconv.FormatInt(size, 10) + ",DefaultBufferSize=" + strconv.FormatInt(DefaultBufferSize, 10))
 	if !powerOfTwo64(size) {
 		fmt.Printf("Size must be power of two. Try %d.", roundUpPowerOfTwo64(size))
 		return nil, fmt.Errorf("Size must be power of two. Try %d.", roundUpPowerOfTwo64(size))
