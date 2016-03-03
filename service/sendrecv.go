@@ -47,7 +47,7 @@ func (this *service) receiver() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+				return fmt.Sprintf("(%s) Recovering from panic(receiver): %v", this.cid(), r)
 			})
 		}
 
@@ -102,7 +102,7 @@ func (this *service) sender() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+				return fmt.Sprintf("(%s) Recovering from panic(sender): %v", this.cid(), r)
 			})
 		}
 
