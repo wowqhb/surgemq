@@ -171,7 +171,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		b := new([]byte)
+		b := make([]byte, 5)
 		n, err := r.Read(b[0:1])
 
 		if n > 0 {
@@ -218,7 +218,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 		len := int64(len(b))
-		total = int64(remlen) + int64(len)
+		remlen_ := int64(remlen)
+		total = remlen_ + int64(len)
 
 		mtype := message.MessageType(b[0] >> 4)
 		/****************/
@@ -228,13 +229,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		_, err = r.Read(b[len:total])
+		b_ := make([]byte, remlen_)
+		_, err = r.Read(b_[0:])
 		if err != nil {
 			Log.Infoc(func() string {
 				return fmt.Sprintf("ReadFrom ERROR(2)")
 			})
 			return 0, err
 		}
+
+		b = append(b, b_)
 		n, err = msg.Decode(b)
 		if err != nil {
 			Log.Infoc(func() string {
