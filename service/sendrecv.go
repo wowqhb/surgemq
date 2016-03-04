@@ -22,7 +22,6 @@ import (
 
 	"github.com/surgemq/message"
 	"runtime"
-	"cmd/internal/obj"
 )
 
 type netReader interface {
