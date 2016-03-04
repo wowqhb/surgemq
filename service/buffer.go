@@ -60,8 +60,6 @@ type ByteArray struct {
 	bArray []byte
 }
 
-
-
 func (this *buffer)ReadCommit(index int64) {
 	this.ringBuffer[index] = nil
 }
@@ -275,7 +273,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 		defer this.ReadCommit(index)
 		Log.Debugc(func() string {
-			return fmt.Sprintf("p=" + strconv.FormatBool(p == nil))
+			return fmt.Sprintf("defer this.ReadCommit(%d)", index)
 		})
 		Log.Debugc(func() string {
 			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
