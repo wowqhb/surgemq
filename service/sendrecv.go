@@ -182,15 +182,12 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	var index int64
 	var ok bool
 
-	for i := 0; i < 99; i++ {
-		if this.isDone() {
-			return nil, err
-		}
-		b, index, ok = this.in.ReadBuffer()
-		if ok {
-			break
-		}
-		runtime.Gosched()
+	if this.isDone() {
+		return nil, err
+	}
+	b, index, ok = this.in.ReadBuffer()
+	if !ok {
+		return nil, err
 	}
 	defer this.in.ReadCommit(index)
 	msg, err = mtype.New()
@@ -214,9 +211,6 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 
 // writeMessage() writes a message to the outgoing buffer
 func (this *service) writeMessage(msg message.Message) (error) {
-	Log.Errorc(func() string {
-		return fmt.Sprintf("message.Message：" + msg.Name())
-	})
 	if this.out == nil {
 		return ErrBufferNotReady
 	}

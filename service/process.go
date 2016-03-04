@@ -67,8 +67,7 @@ func (this *service) processor() {
 		// 1. Find out what message is next and the size of the message
 		b, index, ok := this.in.ReadBuffer()
 		if !ok {
-			runtime.Gosched()
-			continue
+			return
 		}
 		defer this.in.ReadCommit(index)
 		mtype := message.MessageType(b[0] >> 4)

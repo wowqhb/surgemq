@@ -314,8 +314,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 		p, index, ok := this.ReadBuffer()
 		if !ok {
-			runtime.Gosched()
-			continue
+			return total, io.EOF
 		}
 
 		Log.Debugc(func() string {
