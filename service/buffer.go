@@ -64,7 +64,10 @@ type ByteArray struct {
 }
 
 func (this *buffer)ReadCommit(index int64) {
+	this.rcond.L.Lock()
+	defer this.rcond.L.Unlock()
 	this.ringBuffer[index] = nil
+	this.wcond.Broadcast()
 }
 
 /**
@@ -176,9 +179,10 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
 			}
 			if this.ringBuffer[index] == nil {
 				this.ringBuffer[index] = &ByteArray{bArray:in}
-
+				this.rcond.Broadcast()
 				return true
 			}else {
+				this.rcond.Broadcast()
 				return false
 			}
 		}
