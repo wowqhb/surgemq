@@ -313,6 +313,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			return total, io.EOF
 		}
 		p, index, ok := this.ReadBuffer()
+		defer this.ReadCommit(index)
 		if !ok {
 			return total, io.EOF
 		}
@@ -355,7 +356,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				return total, err
 			}
 		}
-		this.ReadCommit(index)
+
 		return total, nil
 	}
 }
