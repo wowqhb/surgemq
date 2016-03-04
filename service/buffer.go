@@ -139,7 +139,7 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in *[]byte) (bool) {
+func (this *buffer)WriteBuffer(in []byte) (bool) {
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
