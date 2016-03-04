@@ -118,6 +118,8 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 	//case writeIndex - readIndex > this.bufferSize:
 	//	return nil, -1, false
 	//default:
+
+	atomic.AddInt64(&this.readIndex, 1)
 	index := readIndex & this.mask
 
 	p_ := this.ringBuffer[index]
@@ -130,7 +132,7 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 	if p == nil {
 		return nil, -1, false
 	}
-	atomic.AddInt64(&this.readIndex, 1)
+
 	return p, index, true
 	//}
 	//return nil, -1, false
