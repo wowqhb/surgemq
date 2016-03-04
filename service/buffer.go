@@ -22,7 +22,6 @@ import (
 	"runtime"
 //"github.com/surgemq/message"
 	"encoding/binary"
-	"strconv"
 )
 
 var (
