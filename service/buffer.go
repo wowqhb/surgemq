@@ -111,7 +111,7 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
-func (this *buffer)ReadBuffer() (p *[]byte, index int64, ok bool) {
+func (this *buffer)ReadBuffer() (p []byte, index int64, ok bool) {
 	ok = true
 	p = nil
 
