@@ -68,7 +68,7 @@ func (this *mxTopics) Subscribe(topic []byte, qos byte, sub interface{}, client_
 	}
 
 	if !checkValidchannel(client_id, topic_str) {
-		return message.QosFailure, fmt.Errorf("Invalid Channel %d", topic_str)
+		return message.QosFailure, fmt.Errorf("Invalid Channel %s", topic_str)
 	}
 
 	this.smu.Lock()
