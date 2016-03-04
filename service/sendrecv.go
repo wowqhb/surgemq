@@ -238,7 +238,7 @@ func (this *service) writeMessage(msg message.Message) (error) {
 
 	for i := 0; i < 100; i++ {
 		if this.isDone() {
-			return 0, io.EOF
+			return io.EOF
 		}
 		if this.out.WriteBuffer(b) {
 			break
