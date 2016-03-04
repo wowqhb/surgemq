@@ -122,7 +122,9 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 
 	p_ := this.ringBuffer[index]
 	//this.ringBuffer[index] = nil
-
+	if p_ == nil {
+		return nil, -1, false
+	}
 	p := p_.bArray
 
 	if p == nil {
