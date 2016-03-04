@@ -57,10 +57,10 @@ type buffer struct {
 }
 
 type ByteArray struct {
-	bArray []byte
+	bArray *[]byte
 }
 
-func (this *ByteArray)GetArray() ([]byte) {
+func (this *ByteArray)GetArray() (*[]byte) {
 	return this.bArray
 }
 
@@ -127,7 +127,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 		p_ := *(this.ringBuffer[index])
 		this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-		p =&(p_.GetArray())
+		p = p_.GetArray()
 
 		if p == nil {
 			ok = false
@@ -141,7 +141,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in []byte) (ok bool) {
+func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
 	ok = true
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
