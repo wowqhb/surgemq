@@ -288,14 +288,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		/*************************/
 
-		for i := 0; i < 100; i++ {
-			if this.isDone() {
-				return total, io.EOF
-			}
-			if this.WriteBuffer(b) {
-				break
-			}
-			runtime.Gosched()
+		if this.WriteBuffer(b) {
+			return total, err
 		}
 
 		return total, nil
