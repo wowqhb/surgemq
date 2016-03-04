@@ -231,7 +231,7 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	//
 	// FIXME: Try to find a better way than a mutex...if possible.
 	b := make([]byte, msg.Len())
-	_, err := msg.Encode(b)
+	n, err := msg.Encode(b)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (this *service) writeMessage(msg message.Message) (error) {
 		runtime.Gosched()
 	}
 
-	this.outStat.increment(int64(1))
+	this.outStat.increment(int64(n))
 
 	return nil
 }
