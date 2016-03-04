@@ -185,10 +185,11 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 		return nil, err
 	}
 	b, index, ok = this.in.ReadBuffer()
+	defer this.in.ReadCommit(index)
 	if !ok {
 		return nil, err
 	}
-	defer this.in.ReadCommit(index)
+
 	msg, err = mtype.New()
 	if err != nil {
 		Log.Errorc(func() string {
