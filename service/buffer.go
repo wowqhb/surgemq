@@ -60,9 +60,7 @@ type ByteArray struct {
 	bArray *[]byte
 }
 
-func (this *ByteArray)GetArray() (*[]byte) {
-	return this.bArray
-}
+
 
 func (this *buffer)ReadCommit(index int64) {
 	this.ringBuffer[index] = nil
@@ -128,10 +126,10 @@ func (this *buffer)ReadBuffer() (p *[]byte, index int64, ok bool) {
 		//index := buffer.readIndex % buffer.bufferSize
 		index := readIndex & this.mask
 
-		p_ := *(this.ringBuffer[index])
+		p_ := this.ringBuffer[index]
 		//this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-		p = p_.GetArray()
+		p = p_.bArray
 
 		if p == nil {
 			ok = false
