@@ -155,7 +155,7 @@ func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
 		//index := buffer.writeIndex % buffer.bufferSize
 		index := writeIndex & this.mask
 		if this.ringBuffer[index] == nil {
-			this.ringBuffer[index] = &ByteArray{bArray:in}
+			this.ringBuffer[index] = &ByteArray{bArray:*in}
 			atomic.AddInt64(&this.writeIndex, 1)
 		}else {
 			ok = false
