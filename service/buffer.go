@@ -162,7 +162,7 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
 
 /**
 2016.03.03 修改
-关闭缓存
+完成
  */
 func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
