@@ -117,9 +117,7 @@ func (this *service) sender() {
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting sender", this.cid())})
 
 	this.wgStarted.Done()
-	Log.Infoc(func() string {
-		return fmt.Sprintf("conn is ok ?= " + strconv.FormatBool(this.conn != nil))
-	})
+
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {

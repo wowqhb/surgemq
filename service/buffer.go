@@ -279,11 +279,13 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if len(*p) > 0 {
 			n, err := w.Write(*p)
 			total += int64(n)
-			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
+			Log.Debugc(func() string {
+				return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)
+			})
 
 			if err != nil {
 				Log.Errorc(func() string {
-					return fmt.Sprintf("w.Write(p)")
+					return fmt.Sprintf("w.Write(p) error")
 				})
 				return total, err
 			}
