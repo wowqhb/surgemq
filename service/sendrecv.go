@@ -22,6 +22,7 @@ import (
 
 	"github.com/surgemq/message"
 	"runtime"
+	"strconv"
 )
 
 type netReader interface {
@@ -117,7 +118,7 @@ func (this *service) sender() {
 
 	this.wgStarted.Done()
 	Log.Infoc(func() string {
-		return fmt.Sprintf("conn is ok ?= " + this.conn != nil)
+		return fmt.Sprintf("conn is ok ?= " + strconv.FormatBool(this.conn != nil))
 	})
 	switch conn := this.conn.(type) {
 	case net.Conn:
