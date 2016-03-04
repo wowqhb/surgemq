@@ -48,14 +48,21 @@ const (
 bingbuffer结构体
  */
 type buffer struct {
-	readIndex  int64     //读序号
-	writeIndex int64     //写序号
-	ringBuffer []*[]byte //环形buffer指针数组
-	bufferSize int64     //初始化环形buffer指针数组大小
-	mask       int64     //掩码：bufferSize-1
-	done       int64     //是否完成
+	readIndex  int64        //读序号
+	writeIndex int64        //写序号
+	ringBuffer *[]ByteArray //环形buffer指针数组
+	bufferSize int64        //初始化环形buffer指针数组大小
+	mask       int64        //掩码：bufferSize-1
+	done       int64        //是否完成
 }
 
+type ByteArray struct {
+	bArray []byte
+}
+
+func (this *ByteArray)GetArray() ([]byte) {
+	return this.bArray
+}
 
 /**
 2016.03.03 添加
@@ -77,7 +84,7 @@ func newBuffer(size int64) (*buffer, error) {
 	return &buffer{
 		readIndex: int64(0), //读序号
 		writeIndex: int64(0), //写序号
-		ringBuffer: make([]*[]byte, size), //环形buffer指针数组
+		ringBuffer: make([]ByteArray, size), //环形buffer指针数组
 		bufferSize: size, //初始化环形buffer指针数组大小
 		mask:size - 1,
 	}, nil
@@ -116,10 +123,11 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 	default:
 		//index := buffer.readIndex % buffer.bufferSize
 		index := readIndex & this.mask
-		p = this.ringBuffer[index][0:]
+
+		p_ := ByteArray{}(this.ringBuffer[index])
 		this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-
+		p = p_.GetArray()[0:]
 		if p == nil {
 			ok = false
 		}
@@ -132,7 +140,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
+func (this *buffer)WriteBuffer(in []byte) (ok bool) {
 	ok = true
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
@@ -144,7 +152,7 @@ func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
 		//index := buffer.writeIndex % buffer.bufferSize
 		index := writeIndex & this.mask
 		if this.ringBuffer[index] == nil {
-			this.ringBuffer[index] = in
+			this.ringBuffer[index] = &ByteArray{bArray:in}
 			atomic.AddInt64(&this.writeIndex, 1)
 		}else {
 			ok = false
