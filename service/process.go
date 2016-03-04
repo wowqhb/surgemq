@@ -29,7 +29,6 @@ import (
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/surgemq/message"
-	"runtime"
 )
 
 var (
