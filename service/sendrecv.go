@@ -132,6 +132,10 @@ func (this *service) sender() {
 					})
 				}
 				return
+			}else {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("向conn些数据成功！")
+				})
 			}
 		}
 
