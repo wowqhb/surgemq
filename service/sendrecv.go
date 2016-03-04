@@ -214,6 +214,9 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 
 // writeMessage() writes a message to the outgoing buffer
 func (this *service) writeMessage(msg message.Message) (error) {
+	Log.Errorc(func() string {
+		return fmt.Sprintf("message.Message：" + msg.Name())
+	})
 	if this.out == nil {
 		return ErrBufferNotReady
 	}
