@@ -108,32 +108,30 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
-func (this *buffer)ReadBuffer() (p []byte, index int64, ok bool) {
-	ok = true
-	p = nil
+func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 
-	index = int64(-1)
 	readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
 	switch  {
 	case readIndex >= writeIndex:
-		ok = false
+		return nil, -1, false
 	case writeIndex - readIndex > this.bufferSize:
-		ok = false
+		return nil, -1, false
 	default:
 		//index := buffer.readIndex % buffer.bufferSize
-		index = readIndex & this.mask
+		index := readIndex & this.mask
 
 		p_ := this.ringBuffer[index]
 		//this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-		p = p_.bArray
+		p := p_.bArray
 
 		if p == nil {
-			ok = false
+			return nil, -1, false
 		}
+		return p, index, true
 	}
-	return p, index, ok
+	return nil, -1, false
 }
 
 
@@ -141,25 +139,24 @@ func (this *buffer)ReadBuffer() (p []byte, index int64, ok bool) {
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
  */
-func (this *buffer)WriteBuffer(in *[]byte) (ok bool) {
-	ok = true
+func (this *buffer)WriteBuffer(in *[]byte) (bool) {
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
 	switch  {
 	case writeIndex - readIndex < 0:
-		ok = false
+		return false
 	default:
 		//index := buffer.writeIndex % buffer.bufferSize
 		index := writeIndex & this.mask
 		if this.ringBuffer[index] == nil {
 			this.ringBuffer[index] = &ByteArray{bArray:*in}
 			atomic.AddInt64(&this.writeIndex, 1)
+			return true
 		}else {
-			ok = false
+			return false
 		}
 	}
-	return ok
 }
 
 /**
