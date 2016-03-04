@@ -71,7 +71,7 @@ func (this *service) processor() {
 			continue
 		}
 		defer this.in.ReadCommit(index)
-		mtype := message.MessageType((*b)[0] >> 4)
+		mtype := message.MessageType(b[0] >> 4)
 		/****************/
 		var msg message.Message
 		var err error
@@ -83,7 +83,7 @@ func (this *service) processor() {
 			return
 		}
 
-		_, err = msg.Decode(*b)
+		_, err = msg.Decode(b)
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s) Decode Error processing %s: %v", this.cid(), msg.Name(), err)

@@ -191,7 +191,7 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 		return nil, err
 	}
 
-	_, err = msg.Decode(*b)
+	_, err = msg.Decode(b)
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("(%s) Decode Error processing: %v", this.cid(), err)

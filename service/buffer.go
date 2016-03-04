@@ -278,7 +278,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			return fmt.Sprintf("p=" + strconv.FormatBool(p == nil))
 		})
 		Log.Debugc(func() string {
-			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(*p))
+			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
 		})
 
 		Log.Debugc(func() string {
@@ -298,8 +298,8 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		//	return total, io.EOF
 		//}
 		// There's some data, let's process it first
-		if len(*p) > 0 {
-			n, err := w.Write(*p)
+		if len(p) > 0 {
+			n, err := w.Write(p)
 			total += int64(n)
 			Log.Debugc(func() string {
 				return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)
