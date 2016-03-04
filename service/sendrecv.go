@@ -234,7 +234,7 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	}
 
 	for i := 0; i < 100; i++ {
-		if this.out.WriteBuffer(b); {
+		if this.out.WriteBuffer(b) {
 			break
 		}
 		runtime.Gosched()
