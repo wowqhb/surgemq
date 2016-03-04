@@ -115,7 +115,7 @@ func (this *service) processor() {
 		//}
 
 		// 7. Check to see if done is closed, if so, exit
-		if this.isDone() /*&& this.in.Len() == 0*/ {
+		if this.isDone() && this.in.Len() == 0 {
 			return
 		}
 

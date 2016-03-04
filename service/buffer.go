@@ -70,6 +70,12 @@ func (this *buffer)ReadCommit(index int64) {
 	this.wcond.Broadcast()
 }
 
+func (this *buffer) Len() int {
+	cpos := this.GetCurrentReadIndex()
+	ppos := this.GetCurrentWriteIndex()
+	return int(ppos - cpos)
+}
+
 /**
 2016.03.03 添加
 初始化ringbuffer
