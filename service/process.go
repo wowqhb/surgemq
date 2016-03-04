@@ -74,8 +74,7 @@ func (this *service) processor() {
 		mtype := message.MessageType(b[0] >> 4)
 		/****************/
 		var msg message.Message
-		var err error
-		msg, err = mtype.New()
+		msg, err := mtype.New()
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s)NewMessage  Error processing %s: %v", this.cid(), msg.Name(), err)
@@ -83,7 +82,7 @@ func (this *service) processor() {
 			return
 		}
 
-		_, err = msg.Decode(b)
+		n, err := msg.Decode(b)
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s) Decode Error processing %s: %v", this.cid(), msg.Name(), err)
@@ -92,7 +91,7 @@ func (this *service) processor() {
 		}
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
 
-		this.inStat.increment(int64(1))
+		this.inStat.increment(int64(n))
 
 		// 5. Process the read message
 		err = this.processIncoming(msg)
