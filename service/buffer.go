@@ -259,7 +259,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		/*************************/
 
-		for !this.WriteBuffer(b) {
+		for i := 0; i < 100; i++ {
+			if this.WriteBuffer(b) {
+				break
+			}
 			runtime.Gosched()
 		}
 

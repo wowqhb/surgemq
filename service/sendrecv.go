@@ -22,6 +22,7 @@ import (
 
 	"github.com/surgemq/message"
 	"runtime"
+	"cmd/internal/obj"
 )
 
 type netReader interface {
@@ -178,8 +179,15 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 		return nil, err
 	}
 
-	b, index, ok := this.in.ReadBuffer()
-	for ; !ok; b, index, ok = this.in.ReadBuffer() {
+	var b []byte
+	var index int64
+	var ok bool
+
+	for i := 0; i < 99; i++ {
+		b, index, ok = this.in.ReadBuffer()
+		if ok {
+			break
+		}
 		runtime.Gosched()
 	}
 	defer this.in.ReadCommit(index)
@@ -225,9 +233,14 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	if err != nil {
 		return err
 	}
-	for ok := this.out.WriteBuffer(b); !ok; ok = this.out.WriteBuffer(b) {
+
+	for i := 0; i < 100; i++ {
+		if this.out.WriteBuffer(b); {
+			break
+		}
 		runtime.Gosched()
 	}
+
 	this.outStat.increment(int64(1))
 
 	return nil
