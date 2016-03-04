@@ -233,14 +233,8 @@ func (this *service) writeMessage(msg message.Message) (error) {
 		return err
 	}
 
-	for i := 0; i < 100; i++ {
-		if this.isDone() {
-			return io.EOF
-		}
-		if this.out.WriteBuffer(b) {
-			break
-		}
-		runtime.Gosched()
+	if this.out.WriteBuffer(b) {
+		return err
 	}
 
 	this.outStat.increment(int64(n))
