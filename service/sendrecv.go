@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/surgemq/message"
-	"runtime"
 )
 
 type netReader interface {

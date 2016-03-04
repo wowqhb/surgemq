@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"sync/atomic"
-	"runtime"
 //"github.com/surgemq/message"
 	"encoding/binary"
 	"math"
