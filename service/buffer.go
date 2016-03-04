@@ -22,6 +22,7 @@ import (
 	"runtime"
 //"github.com/surgemq/message"
 	"encoding/binary"
+	"math"
 )
 
 var (
@@ -118,8 +119,12 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 	//case writeIndex - readIndex > this.bufferSize:
 	//	return nil, -1, false
 	//default:
+	if readIndex == math.MaxInt64 {
+		atomic.StoreInt64(&this.readIndex, int64(0))
+	}else {
+		atomic.AddInt64(&this.readIndex, int64(1))
+	}
 
-	atomic.AddInt64(&this.readIndex, 1)
 	index := readIndex & this.mask
 
 	p_ := this.ringBuffer[index]
@@ -152,7 +157,11 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
 	//	return false
 	//default:
 	index := writeIndex & this.mask
-	atomic.AddInt64(&this.writeIndex, 1)
+	if writeIndex == math.MaxInt64 {
+		atomic.StoreInt64(&this.writeIndex, int64(0))
+	}else {
+		atomic.AddInt64(&this.writeIndex, int64(1))
+	}
 	if this.ringBuffer[index] == nil {
 		this.ringBuffer[index] = &ByteArray{bArray:in}
 
