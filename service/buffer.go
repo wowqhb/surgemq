@@ -50,7 +50,7 @@ bingbuffer结构体
 type buffer struct {
 	readIndex  int64        //读序号
 	writeIndex int64        //写序号
-	ringBuffer *[]ByteArray //环形buffer指针数组
+	ringBuffer []*ByteArray //环形buffer指针数组
 	bufferSize int64        //初始化环形buffer指针数组大小
 	mask       int64        //掩码：bufferSize-1
 	done       int64        //是否完成
@@ -84,7 +84,7 @@ func newBuffer(size int64) (*buffer, error) {
 	return &buffer{
 		readIndex: int64(0), //读序号
 		writeIndex: int64(0), //写序号
-		ringBuffer: make([]ByteArray, size), //环形buffer指针数组
+		ringBuffer: make([]*ByteArray, size), //环形buffer指针数组
 		bufferSize: size, //初始化环形buffer指针数组大小
 		mask:size - 1,
 	}, nil
