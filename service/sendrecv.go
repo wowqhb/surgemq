@@ -183,6 +183,9 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	var ok bool
 
 	for i := 0; i < 99; i++ {
+		if this.isDone() {
+			return nil, err
+		}
 		b, index, ok = this.in.ReadBuffer()
 		if ok {
 			break
@@ -234,6 +237,9 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	}
 
 	for i := 0; i < 100; i++ {
+		if this.isDone() {
+			return 0, io.EOF
+		}
 		if this.out.WriteBuffer(b) {
 			break
 		}
