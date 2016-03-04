@@ -270,7 +270,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			runtime.Gosched()
 			continue
 		}
-		defer this.ReadCommit(index)
+
 		Log.Debugc(func() string {
 			return fmt.Sprintf("defer this.ReadCommit(%s)", index)
 		})
@@ -309,7 +309,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				return total, err
 			}
 		}
-
+		this.ReadCommit(index)
 		return total, nil
 	}
 }
