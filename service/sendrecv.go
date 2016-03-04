@@ -22,7 +22,6 @@ import (
 
 	"github.com/surgemq/message"
 	"runtime"
-	"strconv"
 )
 
 type netReader interface {
