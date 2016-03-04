@@ -116,13 +116,23 @@ func (this *service) sender() {
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting sender", this.cid())})
 
 	this.wgStarted.Done()
-
+	Log.Debugc(func() string {
+		return fmt.Sprintf("sender_1(%s)", this.cid())
+	})
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {
+			Log.Debugc(func() string {
+				return fmt.Sprintf("sender_2(%s)", this.cid())
+			})
 			_, err := this.out.WriteTo(conn)
-
+			Log.Debugc(func() string {
+				return fmt.Sprintf("sender_3(%s)", this.cid())
+			})
 			if err != nil {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("sender_4(%s)", this.cid())
+				})
 				if err != io.EOF {
 					Log.Errorc(func() string {
 						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
@@ -130,6 +140,9 @@ func (this *service) sender() {
 				}
 				return
 			}else {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("sender_5(%s)", this.cid())
+				})
 				Log.Infoc(func() string {
 					return fmt.Sprintf("向conn些数据成功！")
 				})
@@ -144,6 +157,9 @@ func (this *service) sender() {
 			return fmt.Sprintf("(%s) Invalid connection type", this.cid())
 		})
 	}
+	Log.Debugc(func() string {
+		return fmt.Sprintf("sender_6(%s)", this.cid())
+	})
 }
 
 
