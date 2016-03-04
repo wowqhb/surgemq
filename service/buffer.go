@@ -111,28 +111,27 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 
 	readIndex := atomic.LoadInt64(&this.readIndex)
-	writeIndex := atomic.LoadInt64(&this.writeIndex)
-	switch  {
-	case readIndex >= writeIndex:
+	//writeIndex := atomic.LoadInt64(&this.writeIndex)
+	//switch  {
+	//case readIndex >= writeIndex:
+	//	return nil, -1, false
+	//case writeIndex - readIndex > this.bufferSize:
+	//	return nil, -1, false
+	//default:
+	index := readIndex & this.mask
+
+	p_ := this.ringBuffer[index]
+	//this.ringBuffer[index] = nil
+
+	p := p_.bArray
+
+	if p == nil {
 		return nil, -1, false
-	case writeIndex - readIndex > this.bufferSize:
-		return nil, -1, false
-	default:
-		//index := buffer.readIndex % buffer.bufferSize
-		index := readIndex & this.mask
-
-		p_ := this.ringBuffer[index]
-		//this.ringBuffer[index] = nil
-
-		p := p_.bArray
-
-		if p == nil {
-			return nil, -1, false
-		}
-		atomic.AddInt64(&this.readIndex, 1)
-		return p, index, true
 	}
-	return nil, -1, false
+	atomic.AddInt64(&this.readIndex, 1)
+	return p, index, true
+	//}
+	//return nil, -1, false
 }
 
 
@@ -142,22 +141,21 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
  */
 func (this *buffer)WriteBuffer(in []byte) (bool) {
 
-	readIndex := atomic.LoadInt64(&this.readIndex)
+	//readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
-	switch  {
-	case writeIndex - readIndex < 0:
+	//switch  {
+	//case writeIndex - readIndex < 0:
+	//	return false
+	//default:
+	index := writeIndex & this.mask
+	if this.ringBuffer[index] == nil {
+		this.ringBuffer[index] = &ByteArray{bArray:in}
+		atomic.AddInt64(&this.writeIndex, 1)
+		return true
+	}else {
 		return false
-	default:
-		//index := buffer.writeIndex % buffer.bufferSize
-		index := writeIndex & this.mask
-		if this.ringBuffer[index] == nil {
-			this.ringBuffer[index] = &ByteArray{bArray:in}
-			atomic.AddInt64(&this.writeIndex, 1)
-			return true
-		}else {
-			return false
-		}
 	}
+	//}
 }
 
 /**
