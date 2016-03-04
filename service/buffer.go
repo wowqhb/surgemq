@@ -23,6 +23,7 @@ import (
 //"github.com/surgemq/message"
 	"encoding/binary"
 	"strconv"
+	"crypto/tls"
 )
 
 var (
@@ -62,6 +63,10 @@ type ByteArray struct {
 
 func (this *ByteArray)GetArray() (*[]byte) {
 	return this.bArray
+}
+
+func (this *buffer)ReadCommit(index int64) {
+	this.ringBuffer[index] = nil
 }
 
 /**
@@ -109,7 +114,7 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
-func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
+func (this *buffer)ReadBuffer() (p *[]byte, index int64, ok bool) {
 	ok = true
 	p = nil
 
@@ -125,7 +130,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 		index := readIndex & this.mask
 
 		p_ := *(this.ringBuffer[index])
-		this.ringBuffer[index] = nil
+		//this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
 		p = p_.GetArray()
 
@@ -133,7 +138,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 			ok = false
 		}
 	}
-	return p, ok
+	return p, index, ok
 }
 
 
@@ -267,10 +272,11 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		p, ok := this.ReadBuffer()
+		p, index, ok := this.ReadBuffer()
 		if !ok {
 			runtime.Gosched()
 		}
+		defer this.ReadCommit(index)
 		Log.Debugc(func() string {
 			return fmt.Sprintf("p=" + strconv.FormatBool(p == nil))
 		})
