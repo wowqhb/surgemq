@@ -150,7 +150,7 @@ func (this *buffer)WriteBuffer(in *[]byte) (bool) {
 		//index := buffer.writeIndex % buffer.bufferSize
 		index := writeIndex & this.mask
 		if this.ringBuffer[index] == nil {
-			this.ringBuffer[index] = &ByteArray{bArray:*in}
+			this.ringBuffer[index] = &ByteArray{bArray:in}
 			atomic.AddInt64(&this.writeIndex, 1)
 			return true
 		}else {
@@ -246,7 +246,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		/*************************/
 
-		for !this.WriteBuffer(&b) {
+		for !this.WriteBuffer(b) {
 			runtime.Gosched()
 		}
 

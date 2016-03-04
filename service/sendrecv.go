@@ -225,7 +225,7 @@ func (this *service) writeMessage(msg message.Message) (error) {
 	if err != nil {
 		return err
 	}
-	for ok := this.out.WriteBuffer(&b); !ok; ok = this.out.WriteBuffer(&b) {
+	for ok := this.out.WriteBuffer(b); !ok; ok = this.out.WriteBuffer(b) {
 		runtime.Gosched()
 	}
 	this.outStat.increment(int64(1))
