@@ -112,6 +112,7 @@ func (this *buffer)ReadBuffer() (p []byte, index int64, ok bool) {
 	ok = true
 	p = nil
 
+	index = int64(-1)
 	readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
 	switch  {
@@ -121,7 +122,7 @@ func (this *buffer)ReadBuffer() (p []byte, index int64, ok bool) {
 		ok = false
 	default:
 		//index := buffer.readIndex % buffer.bufferSize
-		index := readIndex & this.mask
+		index = readIndex & this.mask
 
 		p_ := this.ringBuffer[index]
 		//this.ringBuffer[index] = nil
