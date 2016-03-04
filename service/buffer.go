@@ -262,6 +262,10 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if !ok {
 			runtime.Gosched()
 		}
+
+		Log.Debugc(func() string {
+			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(*p))
+		})
 		//
 		//Log.Errorc(func() string {
 		//	return fmt.Sprintf("msg::" + msg.Name())
