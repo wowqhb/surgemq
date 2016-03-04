@@ -117,36 +117,39 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
-	readIndex := atomic.LoadInt64(&this.readIndex)
-	writeIndex := atomic.LoadInt64(&this.writeIndex)
-	switch  {
-	case readIndex >= writeIndex:
-		return nil, -1, false
-	case writeIndex - readIndex > this.bufferSize:
-		return nil, -1, false
-	default:
-		if readIndex == math.MaxInt64 {
-			atomic.StoreInt64(&this.readIndex, int64(0))
-		}else {
-			atomic.AddInt64(&this.readIndex, int64(1))
+
+	for {
+		readIndex := atomic.LoadInt64(&this.readIndex)
+		writeIndex := atomic.LoadInt64(&this.writeIndex)
+		switch  {
+		case readIndex >= writeIndex:
+			this.rcond.Wait()
+		case writeIndex - readIndex > this.bufferSize:
+			this.rcond.Wait()
+		default:
+			if readIndex == math.MaxInt64 {
+				atomic.StoreInt64(&this.readIndex, int64(0))
+			}else {
+				atomic.AddInt64(&this.readIndex, int64(1))
+			}
+
+			index := readIndex & this.mask
+
+			p_ := this.ringBuffer[index]
+			//this.ringBuffer[index] = nil
+			if p_ == nil {
+				return nil, -1, false
+			}
+			p := p_.bArray
+
+			if p == nil {
+				return nil, -1, false
+			}
+
+			return p, index, true
 		}
-
-		index := readIndex & this.mask
-
-		p_ := this.ringBuffer[index]
-		//this.ringBuffer[index] = nil
-		if p_ == nil {
-			return nil, -1, false
-		}
-		p := p_.bArray
-
-		if p == nil {
-			return nil, -1, false
-		}
-
-		return p, index, true
 	}
-	return nil, -1, false
+
 }
 
 
@@ -157,26 +160,30 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 func (this *buffer)WriteBuffer(in []byte) (bool) {
 	this.wcond.L.Lock()
 	defer this.wcond.L.Unlock()
-	readIndex := atomic.LoadInt64(&this.readIndex)
-	writeIndex := atomic.LoadInt64(&this.writeIndex)
-	switch  {
-	case writeIndex - readIndex < 0:
-		return false
-	default:
-		index := writeIndex & this.mask
-		if writeIndex == math.MaxInt64 {
-			atomic.StoreInt64(&this.writeIndex, int64(0))
-		}else {
-			atomic.AddInt64(&this.writeIndex, int64(1))
-		}
-		if this.ringBuffer[index] == nil {
-			this.ringBuffer[index] = &ByteArray{bArray:in}
 
-			return true
-		}else {
-			return false
+	for {
+		readIndex := atomic.LoadInt64(&this.readIndex)
+		writeIndex := atomic.LoadInt64(&this.writeIndex)
+		switch  {
+		case writeIndex - readIndex < 0:
+			this.wcond.Wait()
+		default:
+			index := writeIndex & this.mask
+			if writeIndex == math.MaxInt64 {
+				atomic.StoreInt64(&this.writeIndex, int64(0))
+			}else {
+				atomic.AddInt64(&this.writeIndex, int64(1))
+			}
+			if this.ringBuffer[index] == nil {
+				this.ringBuffer[index] = &ByteArray{bArray:in}
+
+				return true
+			}else {
+				return false
+			}
 		}
 	}
+
 }
 
 /**
