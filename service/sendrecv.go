@@ -178,10 +178,11 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 		return nil, err
 	}
 
-	b, ok := this.in.ReadBuffer()
-	for ; !ok; b, ok = this.in.ReadBuffer() {
+	b, index, ok := this.in.ReadBuffer()
+	for ; !ok; b, index, ok = this.in.ReadBuffer() {
 		runtime.Gosched()
 	}
+	defer this.in.ReadCommit(index)
 	msg, err = mtype.New()
 	if err != nil {
 		Log.Errorc(func() string {

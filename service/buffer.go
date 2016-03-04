@@ -23,7 +23,6 @@ import (
 //"github.com/surgemq/message"
 	"encoding/binary"
 	"strconv"
-	"crypto/tls"
 )
 
 var (
