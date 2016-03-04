@@ -123,12 +123,13 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 
 		p_ := this.ringBuffer[index]
 		//this.ringBuffer[index] = nil
-		atomic.AddInt64(&this.readIndex, 1)
+
 		p := p_.bArray
 
 		if p == nil {
 			return nil, -1, false
 		}
+		atomic.AddInt64(&this.readIndex, 1)
 		return p, index, true
 	}
 	return nil, -1, false
