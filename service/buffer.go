@@ -127,7 +127,7 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 		p_ := *(this.ringBuffer[index])
 		this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-		p = p_.GetArray()[0:]
+		p =&(p_.GetArray())
 		if p == nil {
 			ok = false
 		}
