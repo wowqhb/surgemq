@@ -113,20 +113,20 @@ func (this *service) sender() {
 		})
 	}()
 
-	Log.Debugc(func() string {
-		return fmt.Sprintf("(%s) Starting sender", this.cid())
-	})
+	//Log.Debugc(func() string {
+	//	return fmt.Sprintf("(%s) Starting sender", this.cid())
+	//})
 
 	this.wgStarted.Done()
-	Log.Debugc(func() string {
-		return fmt.Sprintf("sender_1(%s)", this.cid())
-	})
+	//Log.Debugc(func() string {
+	//	return fmt.Sprintf("sender_1(%s)", this.cid())
+	//})
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {
-			Log.Debugc(func() string {
-				return fmt.Sprintf("sender_2(%s)", this.cid())
-			})
+			//Log.Debugc(func() string {
+			//	return fmt.Sprintf("sender_2(%s)", this.cid())
+			//})
 			_, err := this.out.WriteTo(conn)
 			Log.Debugc(func() string {
 				return fmt.Sprintf("sender_3(%s)", this.cid())

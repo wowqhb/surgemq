@@ -251,18 +251,36 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
  */
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer this.Close()
-
+	Log.Debugc(func() string {
+		return fmt.Sprintf(" WriteTo(w io.Writer)(0)")
+	})
 	total := int64(0)
+	Log.Debugc(func() string {
+		return fmt.Sprintf(" WriteTo(w io.Writer)(1)")
+	})
 	for {
+		Log.Debugc(func() string {
+			return fmt.Sprintf(" WriteTo(w io.Writer)(2)")
+		})
 		if this.isDone() {
+			Log.Debugc(func() string {
+				return fmt.Sprintf(" WriteTo(w io.Writer)(3)")
+			})
 			return total, io.EOF
 		}
-
+		Log.Debugc(func() string {
+			return fmt.Sprintf(" WriteTo(w io.Writer)(4)")
+		})
 		p, ok := this.ReadBuffer()
+		Log.Debugc(func() string {
+			return fmt.Sprintf(" WriteTo(w io.Writer)(5)")
+		})
 		if !ok {
 			runtime.Gosched()
 		}
-
+		Log.Debugc(func() string {
+			return fmt.Sprintf(" WriteTo(w io.Writer)(6)")
+		})
 		Log.Debugc(func() string {
 			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(*p))
 		})
