@@ -116,11 +116,10 @@ func (this *buffer)ReadBuffer() (p *[]byte, ok bool) {
 	default:
 		//index := buffer.readIndex % buffer.bufferSize
 		index := readIndex & this.mask
-		p_ := make([]byte, 5)
-		p_ = append(p_, this.ringBuffer[index][0:]...)
+		p = this.ringBuffer[index][0:]
 		this.ringBuffer[index] = nil
 		atomic.AddInt64(&this.readIndex, 1)
-		p = &p_
+
 		if p == nil {
 			ok = false
 		}
