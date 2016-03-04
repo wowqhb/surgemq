@@ -57,7 +57,7 @@ type buffer struct {
 }
 
 type ByteArray struct {
-	bArray *[]byte
+	bArray []byte
 }
 
 
