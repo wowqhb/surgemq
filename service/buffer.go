@@ -67,6 +67,7 @@ func (this *buffer)ReadCommit(index int64) {
 	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
 	this.ringBuffer[index] = nil
+	this.rcond.Broadcast()
 	this.wcond.Broadcast()
 }
 
