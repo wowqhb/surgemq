@@ -23,6 +23,7 @@ import (
 //"github.com/surgemq/message"
 	"encoding/binary"
 	"math"
+	"sync"
 )
 
 var (
@@ -54,6 +55,8 @@ type buffer struct {
 	bufferSize int64        //初始化环形buffer指针数组大小
 	mask       int64        //掩码：bufferSize-1
 	done       int64        //是否完成
+	rcond      *sync.Cond
+	wcond      *sync.Cond
 }
 
 type ByteArray struct {
@@ -87,6 +90,8 @@ func newBuffer(size int64) (*buffer, error) {
 		ringBuffer: make([]*ByteArray, size), //环形buffer指针数组
 		bufferSize: size, //初始化环形buffer指针数组大小
 		mask:size - 1,
+		rcond:         sync.NewCond(new(sync.Mutex)),
+		wcond:         sync.NewCond(new(sync.Mutex)),
 	}, nil
 }
 
@@ -110,7 +115,8 @@ func (this *buffer)GetCurrentWriteIndex() (int64) {
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
  */
 func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
-
+	this.rcond.L.Lock()
+	defer this.rcond.L.Unlock()
 	readIndex := atomic.LoadInt64(&this.readIndex)
 	//writeIndex := atomic.LoadInt64(&this.writeIndex)
 	//switch  {
@@ -149,7 +155,8 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 写入ringbuffer指针，以及将写序号加1
  */
 func (this *buffer)WriteBuffer(in []byte) (bool) {
-
+	this.wcond.L.Lock()
+	defer this.wcond.L.Unlock()
 	//readIndex := atomic.LoadInt64(&this.readIndex)
 	writeIndex := atomic.LoadInt64(&this.writeIndex)
 	//switch  {
@@ -178,6 +185,16 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
  */
 func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
+	atomic.StoreInt64(&this.done, 1)
+
+	this.wcond.L.Lock()
+	this.rcond.Broadcast()
+	this.wcond.L.Unlock()
+
+	this.rcond.L.Lock()
+	this.wcond.Broadcast()
+	this.rcond.L.Unlock()
+
 	return nil
 }
 /*
