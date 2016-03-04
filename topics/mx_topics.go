@@ -16,14 +16,14 @@ var (
 	MXMaxQosAllowed = message.QosAtLeastOnce
 	RedisPool       *redis.Pool
 	Channelcache    map[string]string
-	cmux sync.RWMutex
+	cmux            sync.RWMutex
 )
 
 var _ TopicsProvider = (*mxTopics)(nil)
 
 type mxTopics struct {
 	// Sub/unsub mutex
-	smu        sync.RWMutex
+	smu sync.RWMutex
 	// Subscription tree
 	//   sroot *mxsnode
 
@@ -32,9 +32,9 @@ type mxTopics struct {
 	subscriber map[string]interface{}
 
 	// Retained message mutex
-	rmu        sync.RWMutex
+	rmu sync.RWMutex
 	// Retained messages topic tree
-	rroot      *mxrnode
+	rroot *mxrnode
 }
 
 func init() {
@@ -68,7 +68,7 @@ func (this *mxTopics) Subscribe(topic []byte, qos byte, sub interface{}, client_
 	}
 
 	if !checkValidchannel(client_id, topic_str) {
-		return message.QosFailure, fmt.Errorf("%s Invalid Channel %s", client_id, topic_str)
+		return message.QosFailure, fmt.Errorf("%s: Invalid Channel %s", client_id, topic_str)
 	}
 
 	this.smu.Lock()
@@ -140,8 +140,8 @@ func (this *mxTopics) Close() error {
 // retained message nodes
 type mxrnode struct {
 	// If this is the end of the topic string, then add retained messages here
-	msg    *message.PublishMessage
-	buf    []byte
+	msg *message.PublishMessage
+	buf []byte
 
 	// Otherwise add the next topic level here
 	rnodes map[string]*mxrnode
@@ -307,7 +307,7 @@ func nextMxTopicLevel(topic []byte) ([]byte, []byte, error) {
 			}
 
 			if i == 0 {
-				return []byte(SWC), topic[i + 1:], nil
+				return []byte(SWC), topic[i+1:], nil
 			}
 
 			s = stateCHR
