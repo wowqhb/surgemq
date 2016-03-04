@@ -267,10 +267,11 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		p, index, ok := this.ReadBuffer()
 		if !ok {
 			runtime.Gosched()
+			continue
 		}
 		defer this.ReadCommit(index)
 		Log.Debugc(func() string {
-			return fmt.Sprintf("defer this.ReadCommit(%d)", index)
+			return fmt.Sprintf("defer this.ReadCommit(%s)", index)
 		})
 		Log.Debugc(func() string {
 			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
