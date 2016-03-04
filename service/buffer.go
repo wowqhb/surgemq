@@ -152,9 +152,10 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
 	//	return false
 	//default:
 	index := writeIndex & this.mask
+	atomic.AddInt64(&this.writeIndex, 1)
 	if this.ringBuffer[index] == nil {
 		this.ringBuffer[index] = &ByteArray{bArray:in}
-		atomic.AddInt64(&this.writeIndex, 1)
+
 		return true
 	}else {
 		return false
