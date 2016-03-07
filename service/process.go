@@ -90,9 +90,9 @@ func (this *service) processor() {
 			})
 			return
 		}
-		fmt.Println("msg.Name=%s", msg.Name())
-		fmt.Println("msg.PacketId=%s", msg.PacketId())
-		fmt.Println("msg.Desc=%s", msg.Desc())
+		fmt.Println("processor=>msg.Name=", msg.Name())
+		fmt.Println("processor=>msg.PacketId=", msg.PacketId())
+		fmt.Println("processor=>msg.Desc=", msg.Desc())
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
 
 		this.inStat.increment(int64(n))
