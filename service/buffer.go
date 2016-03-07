@@ -231,11 +231,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b := make([]byte, int64(5))
 	n, err := r.Read(b[0:1])
-
+	fmt.Println("readfrom first read conn:", err)
 	if n > 0 {
 		total += int64(n)
 		if err != nil {
-			fmt.Println("readfrom first read conn:", err)
 			return total, err
 		}
 	}
@@ -250,15 +249,15 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 		}
 
-		Log.Infoc(func() string {
-			return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
-		})
+		//Log.Infoc(func() string {
+		//	return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
+		//})
 		// Peek cnt bytes from the input buffer.
 
 		_, err := r.Read(b[cnt:(cnt + 1)])
+		fmt.Println("readfrom 2th read conn:", err)
 		//fmt.Println(b)
 		if err != nil {
-			fmt.Println("readfrom 2th read conn:", err)
 			return 0, err
 		}
 		// If we got enough bytes, then check the last byte to see if the continuation
@@ -291,6 +290,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b_ := make([]byte, int64(remlen))
 	_, err = r.Read(b_[0:])
+	fmt.Println("readfrom 3th read conn:", err)
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("从conn读取数据失败(%s)", err)
