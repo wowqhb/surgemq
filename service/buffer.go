@@ -292,7 +292,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		fmt.Println("写入buffer失败，total：%d", total)
 		return total, err
 	}
-
+	fmt.Println("写入buffer的byte数组：%m", b)
 	b = append(b, b_...)
 	fmt.Println("写入buffer的byte数组：%m", b)
 
