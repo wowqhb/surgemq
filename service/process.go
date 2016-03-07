@@ -66,7 +66,8 @@ func (this *service) processor() {
 		// 1. Find out what message is next and the size of the message
 		b, index, ok := this.in.ReadBuffer()
 		if !ok {
-			return
+			//return
+			continue
 		}
 		defer this.in.ReadCommit(index, ok)
 		mtype := message.MessageType(b[0] >> 4)
@@ -77,7 +78,8 @@ func (this *service) processor() {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s)NewMessage  Error processing %s: %v", this.cid(), msg.Name(), err)
 			})
-			return
+			//return
+			continue
 		}
 
 		n, err := msg.Decode(b)

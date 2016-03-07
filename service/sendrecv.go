@@ -81,7 +81,8 @@ func (this *service) receiver() {
 				})
 				//         if err != io.EOF {
 				//         }
-				return
+				//return
+				continue
 			} else {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("向ringbuffer些数据成功！")
@@ -143,7 +144,8 @@ func (this *service) sender() {
 						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
 					})
 				}
-				return
+				//return
+				continue
 			} else {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("向conn些数据成功！")
