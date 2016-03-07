@@ -70,6 +70,7 @@ func (this *service) processor() {
 			continue
 		}
 		defer this.in.ReadCommit(index, ok)
+		fmt.Println("进入processor流程")
 		mtype := message.MessageType(b[0] >> 4)
 		/****************/
 		var msg message.Message
@@ -81,7 +82,6 @@ func (this *service) processor() {
 			//return
 			continue
 		}
-
 		n, err := msg.Decode(b)
 		if err != nil {
 			Log.Errorc(func() string {
@@ -89,6 +89,9 @@ func (this *service) processor() {
 			})
 			return
 		}
+		fmt.Println("msg.Name=%s", msg.Name())
+		fmt.Println("msg.PacketId=%s", msg.PacketId())
+		fmt.Println("msg.Desc=%s", msg.Desc())
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
 
 		this.inStat.increment(int64(n))
