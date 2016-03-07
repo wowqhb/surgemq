@@ -81,7 +81,11 @@ func (this *service) receiver() {
 				})
 				//         if err != io.EOF {
 				//         }
-				return
+				//return
+			} else {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("向ringbuffer些数据成功！")
+				})
 			}
 		}
 
@@ -101,7 +105,11 @@ func (this *service) sender() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic(sender): %v", this.cid(), r)
+				return fmt.Sprintf("(%s) Sendering from panic(sender): %v", this.cid(), r)
+			})
+		} else {
+			Log.Infoc(func() string {
+				return fmt.Sprintf("向conn些数据成功！")
 			})
 		}
 
@@ -141,9 +149,6 @@ func (this *service) sender() {
 				}
 				return
 			} else {
-				Log.Debugc(func() string {
-					return fmt.Sprintf("sender_5(%s)", this.cid())
-				})
 				Log.Infoc(func() string {
 					return fmt.Sprintf("向conn些数据成功！")
 				})
