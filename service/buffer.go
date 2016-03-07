@@ -286,7 +286,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//if err != nil {
 	//	return 0, err
 	//}
-	b_ := make([]byte, 0, remlen_)
+	b_ := make([]byte,remlen_)
 	_, err = r.Read(b_[0:])
 	if err != nil {
 		fmt.Println("写入buffer失败，total：%d", total)
