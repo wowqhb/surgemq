@@ -293,7 +293,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b__ = append(b__, b[0:1+m]...)
 	nlen := int64(0)
 	for nlen < int64(remlen) {
-		b_ := make([]byte, 16)
+		b_ := make([]byte, 64)
 		//b_ := make([]byte, remlen)
 		n, err = r.Read(b_)
 
@@ -303,11 +303,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			})
 			time.Sleep(2 * time.Millisecond)
 			continue
-			//return total, err
+			//return total,err
 		}
 		switch {
 		case n == 0:
-		case n < 16:
+		case n < 64:
 			b__ = append(b__, b_[0:n]...)
 		default:
 			b__ = append(b__, b_[0:]...)
