@@ -81,7 +81,7 @@ func (this *service) receiver() {
 				})
 				//         if err != io.EOF {
 				//         }
-				//return
+				return
 			} else {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("向ringbuffer些数据成功！")
