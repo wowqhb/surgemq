@@ -281,7 +281,9 @@ func (this *Server) Close() error {
 	this.ln.Close()
 
 	for _, svc := range this.svcs {
-		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
+		Log.Infoc(func() string {
+			return fmt.Sprintf("Stopping service %d", svc.id)
+		})
 		svc.stop()
 	}
 

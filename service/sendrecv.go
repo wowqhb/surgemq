@@ -140,7 +140,7 @@ func (this *service) sender() {
 					})
 				}
 				return
-			}else {
+			} else {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("sender_5(%s)", this.cid())
 				})
@@ -162,7 +162,6 @@ func (this *service) sender() {
 		return fmt.Sprintf("sender_6(%s)", this.cid())
 	})
 }
-
 
 // readMessage() reads and copies a message from the buffer. The buffer bytes are
 // committed as a result of the read.
@@ -210,7 +209,7 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 }
 
 // writeMessage() writes a message to the outgoing buffer
-func (this *service) writeMessage(msg message.Message) (error) {
+func (this *service) writeMessage(msg message.Message) error {
 	if this.out == nil {
 		return ErrBufferNotReady
 	}

@@ -17,14 +17,14 @@ package service
 import (
 	"encoding/base64"
 	"github.com/pquerna/ffjson/ffjson"
-//   "encoding/json"
+	//   "encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-//   "runtime/debug"
+	//   "runtime/debug"
 	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
@@ -32,13 +32,13 @@ import (
 )
 
 var (
-	errDisconnect = errors.New("Disconnect")
+	errDisconnect  = errors.New("Disconnect")
 	MsgPendingTime time.Duration
 )
 
 /**
 2016.03.03 添加
- */
+*/
 // processor() reads messages from the incoming buffer and processes them
 func (this *service) processor() {
 	defer func() {
@@ -128,7 +128,7 @@ func (this *service) processor() {
 func (this *service) processIncoming(msg message.Message) error {
 	var err error = nil
 	Log.Errorc(func() string {
-		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T(len=%d)", this.subs, len(this.subs),msg, msg.PacketId())
+		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T(len=%d)", this.subs, len(this.subs), msg, msg.PacketId())
 	})
 
 	switch msg := (msg).(type) {

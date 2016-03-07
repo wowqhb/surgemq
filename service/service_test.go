@@ -217,7 +217,9 @@ func TestServiceSub0Pub0(t *testing.T) {
 				count++
 
 				if count == 10 {
-					Log.Debugc(func() string { return fmt.Sprintf("got 10 pub0") })
+					Log.Debugc(func() string {
+						return fmt.Sprintf("got 10 pub0")
+					})
 					close(done2)
 				}
 
@@ -268,7 +270,9 @@ func TestServiceSub1Pub0(t *testing.T) {
 				count++
 
 				if count == 10 {
-					Log.Debugc(func() string { return fmt.Sprintf("got 10 pub0") })
+					Log.Debugc(func() string {
+						return fmt.Sprintf("got 10 pub0")
+					})
 					close(done2)
 				}
 

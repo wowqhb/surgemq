@@ -31,8 +31,6 @@ func TestBufferConsumerProducerWriteTo(t *testing.T) {
 	testWriteTo(t, buf)
 }
 
-
-
 func fillBuffer(t *testing.T, buf *buffer, bufsize int64) {
 	p := make([]byte, bufsize)
 	for i := range p {
@@ -44,8 +42,6 @@ func fillBuffer(t *testing.T, buf *buffer, bufsize int64) {
 	require.Equal(t, bufsize, n)
 	require.Equal(t, err, io.EOF)
 }
-
-
 
 func testWriteTo(t *testing.T, buf *buffer) {
 	n := int64(20000)
@@ -61,4 +57,3 @@ func testWriteTo(t *testing.T, buf *buffer) {
 	require.Equal(t, io.EOF, err)
 	require.Equal(t, int64(20000), m)
 }
-

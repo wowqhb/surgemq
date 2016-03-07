@@ -3,16 +3,16 @@ package topics
 import (
 	"fmt"
 	"github.com/garyburd/redigo/redis"
-//   "github.com/nagae-memooff/config"
-//   "github.com/nagae-memooff/surgemq/topics"
-//   "github.com/nagae-memooff/surgemq/service"
+	//   "github.com/nagae-memooff/config"
+	//   "github.com/nagae-memooff/surgemq/topics"
+	//   "github.com/nagae-memooff/surgemq/service"
 	"github.com/surge/glog"
 	"github.com/surgemq/message"
 	"sync"
 )
 
 var (
-// MXMaxQosAllowed is the maximum QOS supported by this server
+	// MXMaxQosAllowed is the maximum QOS supported by this server
 	MXMaxQosAllowed = message.QosAtLeastOnce
 	RedisPool       *redis.Pool
 	Channelcache    map[string]string
