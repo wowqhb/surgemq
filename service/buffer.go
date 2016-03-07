@@ -293,6 +293,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		b = append(b, b_...)
+		Log.Infoc(func() string {
+			return fmt.Sprintf("len(b):", len(b))
+		})
 		//n, err = msg.Decode(b)
 		//if err != nil {
 		//	return 0, err
