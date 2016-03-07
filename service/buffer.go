@@ -201,7 +201,6 @@ func (this *buffer) WriteBuffer(in []byte) bool {
 */
 func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
-	atomic.StoreInt64(&this.done, 1)
 
 	this.wcond.L.Lock()
 	this.rcond.Broadcast()
