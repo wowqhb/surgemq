@@ -390,8 +390,8 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 		return nil, err
 	}
 
-	svc.inStat.increment(int64(1))
-	svc.outStat.increment(int64(1))
+	svc.inStat.increment(int64(req.Len()))
+	svc.outStat.increment(int64(resp.Len()))
 
 	if err := svc.start(c_id); err != nil {
 		svc.stop()
