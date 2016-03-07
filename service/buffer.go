@@ -256,7 +256,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		// Peek cnt bytes from the input buffer.
 
 		_, err := r.Read(b[cnt:(cnt + 1)])
-		fmt.Println("readfrom 2th read conn:", err, "读取数量：", n)
+
 		//fmt.Println(b)
 		if err != nil {
 			return 0, err
@@ -269,7 +269,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			break
 		}
 	}
-
+	fmt.Println("readfrom 2th read conn:", err, "读取数量：", cnt)
 	// Get the remaining length of the message
 	remlen, m := binary.Uvarint(b[1:])
 	//Log.Infoc(func() string {
@@ -292,8 +292,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b__ := make([]byte, 0, total)
 	b__ = append(b__, b[0:1+m]...)
 	for i := int64(0); i < int64(remlen); i++ {
-		b_ := make([]byte, int64(1))
-		n, err = r.Read(b_[0:])
+		//b_ := make([]byte, int64(1))
+		b_ := []byte{}
+		n, err = r.Read(b_)
 
 		if err != nil {
 			Log.Errorc(func() string {
