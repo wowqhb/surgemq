@@ -231,7 +231,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b := make([]byte, int64(5))
 	n, err := r.Read(b[0:1])
-	fmt.Println("readfrom first read conn:", err)
+	fmt.Println("readfrom 1st read conn:", err, "读取数量：", n)
 	if n > 0 {
 		total += int64(n)
 		if err != nil {
@@ -255,7 +255,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		// Peek cnt bytes from the input buffer.
 
 		_, err := r.Read(b[cnt:(cnt + 1)])
-		fmt.Println("readfrom 2th read conn:", err)
+		fmt.Println("readfrom 2th read conn:", err, "读取数量：", n)
 		//fmt.Println(b)
 		if err != nil {
 			return 0, err
@@ -289,8 +289,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//	return 0, err
 	//}
 	b_ := make([]byte, int64(remlen))
-	_, err = r.Read(b_[0:])
-	fmt.Println("readfrom 3th read conn:", err)
+	n, err = r.Read(b_[0:])
+	fmt.Println("readfrom 3th read conn:", err, "读取数量：", n)
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("从conn读取数据失败(%s)", err)
