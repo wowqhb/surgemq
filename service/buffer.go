@@ -227,7 +227,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		b := make([]byte, 0, 5)
+		b := make([]byte, 0, 1)
 		n, err := r.Read(b[0:1])
 
 		if n > 0 {
@@ -252,11 +252,12 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
 			})
 			// Peek cnt bytes from the input buffer.
-			_, err := r.Read(b[cnt:cnt + 1])
+			tmpb:=make([]byte,0,1)
+			_, err := r.Read(tmpb[0:1])
 			if err != nil {
 				return 0, err
 			}
-
+			b=append(b,tmpb)
 			// If we got enough bytes, then check the last byte to see if the continuation
 			// bit is set. If so, increment cnt and continue peeking
 			if b[cnt] >= 0x80 {
