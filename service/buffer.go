@@ -24,6 +24,7 @@ import (
 	"errors"
 	"math"
 	"sync"
+	"time"
 )
 
 var (
@@ -290,19 +291,32 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b__ := make([]byte, 0, total)
 	b__ = append(b__, b[0:1+m]...)
-	b_ := make([]byte, remlen)
-	n, err = r.Read(b_)
+	nlen := int64(0)
+	for nlen < int64(remlen) {
+		b_ := make([]byte, 16)
+		//b_ := make([]byte, remlen)
+		n, err = r.Read(b_)
 
-	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("从conn读取数据失败(%s)", err)
-		})
-		//time.Sleep(2 * time.Millisecond)
-		return total, err
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("从conn读取数据失败(%s)", err)
+			})
+			time.Sleep(2 * time.Millisecond)
+			continue
+			//return total, err
+		}
+		switch {
+		case n == 0:
+		case n < 16:
+			b__ = append(b__, b_[0:n]...)
+		default:
+			b__ = append(b__, b_[0:]...)
+		}
+
+		nlen += int64(n)
 	}
-	b__ = append(b__, b_[0:]...)
 
-	fmt.Println("readfrom 3th read conn:", err, "读取数量：", n)
+	fmt.Println("readfrom 3th read conn:", err, "读取数量：", nlen)
 	fmt.Println(b__)
 	//n, err = msg.Decode(b)
 	//if err != nil {
