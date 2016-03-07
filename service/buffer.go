@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	//"github.com/surgemq/message"
 	"encoding/binary"
+	"errors"
 	"math"
 	"sync"
 )
@@ -323,19 +324,16 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	p, index, ok := this.ReadBuffer()
 	defer this.ReadCommit(index)
 	if !ok {
-		return total, io.EOF
+		return total, errors.New("读取过程中出现问题")
 	}
 
 	Log.Debugc(func() string {
-		return fmt.Sprintf("defer this.ReadCommit(%s)", index)
+		return fmt.Sprintf("defer this.ReadCommit(%d)", index)
 	})
 	Log.Debugc(func() string {
-		return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
+		return fmt.Sprintf("WriteTo函数》》读取*p：" + p)
 	})
 
-	Log.Debugc(func() string {
-		return fmt.Sprintf(" WriteTo(w io.Writer)(7)")
-	})
 	//
 	//Log.Errorc(func() string {
 	//	return fmt.Sprintf("msg::" + msg.Name())
