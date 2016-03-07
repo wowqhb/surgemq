@@ -251,13 +251,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
 			})
 			// Peek cnt bytes from the input buffer.
-			Log.Infoc(func() string {
-				return fmt.Sprintf("b[cnt:(cnt + 1)]==start")
-			})
+
 			_, err := r.Read(b[cnt:(cnt + 1)])
-			Log.Infoc(func() string {
-				return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
-			})
 			if err != nil {
 				return 0, err
 			}
@@ -271,7 +266,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		// Get the remaining length of the message
-		remlen, m := binary.Uvarint(b[1:])
+		Log.Infoc(func() string {
+			return fmt.Sprintf("b[cnt:(cnt + 1)]==start")
+		})
+		remlen, m := binary.Uvarint(b[1 : cnt+1])
+		Log.Infoc(func() string {
+			return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
+		})
 		Log.Infoc(func() string {
 			return fmt.Sprintf("remlen: %d===%d", remlen, m)
 		})
