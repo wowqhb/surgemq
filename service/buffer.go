@@ -290,7 +290,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b_ := make([]byte, int64(remlen))
 	_, err = r.Read(b_[0:])
 	if err != nil {
-		fmt.Println("写入buffer失败，total：%d", total)
+		Log.Errorc(func() string {
+			return fmt.Sprintf("从conn读取数据向ringbuffer写入失败")
+		})
 		return total, err
 	}
 	b__ := make([]byte, 0, total)
