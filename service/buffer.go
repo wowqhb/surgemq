@@ -232,7 +232,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b := make([]byte, int64(5))
 	n, err := r.Read(b[0:1])
-	fmt.Println("readfrom 1st read conn:", err, "读取数量：", n)
+	//fmt.Println("readfrom 1st read conn:", err, "读取数量：", n)
 	if n > 0 {
 		total += int64(n)
 		if err != nil {
@@ -259,7 +259,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		//fmt.Println(b)
 		if err != nil {
-			return 0, err
+			return total, err
 		}
 		// If we got enough bytes, then check the last byte to see if the continuation
 		// bit is set. If so, increment cnt and continue peeking
@@ -269,7 +269,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			break
 		}
 	}
-	fmt.Println("readfrom 2th read conn:", err, "读取数量：", cnt)
+	//fmt.Println("readfrom 2th read conn:", err, "读取数量：", cnt)
 	// Get the remaining length of the message
 	remlen, m := binary.Uvarint(b[1:])
 	//Log.Infoc(func() string {
@@ -307,6 +307,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		switch {
 		case n == 0:
+			break
 		case n < 64:
 			b__ = append(b__, b_[0:n]...)
 		default:
@@ -315,9 +316,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		nlen += int64(n)
 	}
-
-	fmt.Println("readfrom 3th read conn:", err, "读取数量：", nlen)
-	fmt.Println(b__)
+	if nlen == int64(0) {
+		return total, err
+	}
+	//fmt.Println("readfrom 3th read conn:", err, "读取数量：", nlen)
+	//fmt.Println(b__)
 	//n, err = msg.Decode(b)
 	//if err != nil {
 	//	return 0, err
@@ -350,7 +353,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	Log.Debugc(func() string {
-		return fmt.Sprintf("WriteTo方法读取ringbuffer成功(%d)", index)
+		return fmt.Sprintf("WriteTo方法读取ringbuffer成功(index=%d)", index)
 	})
 	//Log.Debugc(func() string {
 	//	return fmt.Sprintf("WriteTo函数》》读取*p：" + p)
