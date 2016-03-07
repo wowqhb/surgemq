@@ -62,10 +62,12 @@ type ByteArray struct {
 	bArray []byte
 }
 
-func (this *buffer) ReadCommit(index int64) {
+func (this *buffer) ReadCommit(index int64, ok bool) {
 	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
-	this.ringBuffer[index] = nil
+	if ok {
+		this.ringBuffer[index] = nil
+	}
 	this.wcond.Broadcast()
 }
 
@@ -322,7 +324,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	//	return total, io.EOF
 	//}
 	p, index, ok := this.ReadBuffer()
-	defer this.ReadCommit(index)
+	defer this.ReadCommit(index, ok)
 	if !ok {
 		return total, errors.New("读取过程中出现问题")
 	}

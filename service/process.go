@@ -68,7 +68,7 @@ func (this *service) processor() {
 		if !ok {
 			return
 		}
-		defer this.in.ReadCommit(index)
+		defer this.in.ReadCommit(index, ok)
 		mtype := message.MessageType(b[0] >> 4)
 		/****************/
 		var msg message.Message
