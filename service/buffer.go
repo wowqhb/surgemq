@@ -291,7 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b__ := make([]byte, 0, total)
 	b__ = append(b__, b[0:1+m]...)
-	for i := 0; i < remlen; i++ {
+	for i := int64(0); i < int64(remlen); i++ {
 		b_ := make([]byte, int64(remlen))
 		n, err = r.Read(b_[0:])
 
