@@ -291,7 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	_, err = r.Read(b_[0:])
 	if err != nil {
 		Log.Errorc(func() string {
-			return fmt.Sprintf("从conn读取数据向ringbuffer写入失败")
+			return fmt.Sprintf("从conn读取数据失败")
 		})
 		return total, err
 	}
