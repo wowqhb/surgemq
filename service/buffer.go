@@ -304,7 +304,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		/*************************/
 
-		if this.WriteBuffer(b) {
+		if !this.WriteBuffer(b) {
 			return total, err
 		}
 
@@ -375,9 +375,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 2016.03.03 修改
 */
 func (this *buffer) isDone() bool {
-	//if atomic.LoadInt64(&this.done) == 1 {
-	//	return true
-	//}
+	if atomic.LoadInt64(&this.done) == 1 {
+		return true
+	}
 
 	return false
 }
