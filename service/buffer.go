@@ -293,7 +293,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	}
 
 	b = append(b, b_...)
-	fmt.Println(b)
+	fmt.Println("写入buffer的byte数组：%m",b)
 	Log.Infoc(func() string {
 		return fmt.Sprintf("len(b):%d", len(b))
 	})
