@@ -248,6 +248,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
 
+			Log.Infoc(func() string {
+				return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
+			})
 			// Peek cnt bytes from the input buffer.
 			_, err := r.Read(b[cnt:cnt + 1])
 			if err != nil {

@@ -128,7 +128,7 @@ func (this *service) processor() {
 func (this *service) processIncoming(msg message.Message) error {
 	var err error = nil
 	Log.Errorc(func() string {
-		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T(%d)", this.subs, len(this.subs),msg, msg.PacketId())
+		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T(len=%d)", this.subs, len(this.subs),msg, msg.PacketId())
 	})
 
 	switch msg := (msg).(type) {
