@@ -291,6 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		fmt.Println("写入buffer失败，total：%d", total)
 		return total, err
 	}
+	fmt.Println(b_)
 	b = append(b, b_[0:]...)
 
 	//n, err = msg.Decode(b)
