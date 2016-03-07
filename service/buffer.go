@@ -253,10 +253,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			// Peek cnt bytes from the input buffer.
 
 			_, err := r.Read(b[cnt:(cnt + 1)])
+			fmt.Println(b)
 			if err != nil {
-				Log.Infoc(func() string {
-					return fmt.Sprintf("_, err := r.Read(b[cnt:(cnt + 1)]) is error")
-				})
 				return 0, err
 			}
 			// If we got enough bytes, then check the last byte to see if the continuation
