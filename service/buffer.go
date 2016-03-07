@@ -19,34 +19,33 @@ import (
 	"fmt"
 	"io"
 	"sync/atomic"
-//"github.com/surgemq/message"
+	//"github.com/surgemq/message"
 	"encoding/binary"
 	"math"
 	"sync"
 )
 
 var (
-	bufcnt int64
+	bufcnt            int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize int64
+	DeviceInBufferSize  int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize int64
+	MasterInBufferSize  int64
 	MasterOutBufferSize int64
 )
 
 const (
-	smallReadBlockSize = 512
-	defaultReadBlockSize = 8192
+	smallReadBlockSize    = 512
+	defaultReadBlockSize  = 8192
 	defaultWriteBlockSize = 8192
 )
-
 
 /**
 2016.03.03 修改
 bingbuffer结构体
- */
+*/
 type buffer struct {
 	readIndex  int64        //读序号
 	writeIndex int64        //写序号
@@ -62,7 +61,7 @@ type ByteArray struct {
 	bArray []byte
 }
 
-func (this *buffer)ReadCommit(index int64) {
+func (this *buffer) ReadCommit(index int64) {
 	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
 	this.ringBuffer[index] = nil
@@ -80,7 +79,7 @@ func (this *buffer) Len() int {
 2016.03.03 添加
 初始化ringbuffer
 参数bufferSize：初始化环形buffer指针数组大小
- */
+*/
 func newBuffer(size int64) (*buffer, error) {
 	if size < 0 {
 		return nil, bufio.ErrNegativeCount
@@ -94,51 +93,52 @@ func newBuffer(size int64) (*buffer, error) {
 	}
 
 	return &buffer{
-		readIndex: int64(0), //读序号
-		writeIndex: int64(0), //写序号
+		readIndex:  int64(0),                 //读序号
+		writeIndex: int64(0),                 //写序号
 		ringBuffer: make([]*ByteArray, size), //环形buffer指针数组
-		bufferSize: size, //初始化环形buffer指针数组大小
-		mask:size - 1,
-		rcond:         sync.NewCond(new(sync.Mutex)),
-		wcond:         sync.NewCond(new(sync.Mutex)),
+		bufferSize: size,                     //初始化环形buffer指针数组大小
+		mask:       size - 1,
+		rcond:      sync.NewCond(new(sync.Mutex)),
+		wcond:      sync.NewCond(new(sync.Mutex)),
 	}, nil
 }
 
 /**
 2016.03.03 添加
 获取当前读序号
- */
-func (this *buffer)GetCurrentReadIndex() (int64) {
+*/
+func (this *buffer) GetCurrentReadIndex() int64 {
 	return atomic.LoadInt64(&this.readIndex)
 }
+
 /**
 2016.03.03 添加
 获取当前写序号
- */
-func (this *buffer)GetCurrentWriteIndex() (int64) {
+*/
+func (this *buffer) GetCurrentWriteIndex() int64 {
 	return atomic.LoadInt64(&this.writeIndex)
 }
 
 /**
 2016.03.03 添加
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
- */
-func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
+*/
+func (this *buffer) ReadBuffer() ([]byte, int64, bool) {
 	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
 
 	for {
 		readIndex := atomic.LoadInt64(&this.readIndex)
 		writeIndex := atomic.LoadInt64(&this.writeIndex)
-		switch  {
+		switch {
 		case readIndex >= writeIndex:
 			this.rcond.Wait()
-		case writeIndex - readIndex > this.bufferSize:
+		case writeIndex-readIndex > this.bufferSize:
 			this.rcond.Wait()
 		default:
 			if readIndex == math.MaxInt64 {
 				atomic.StoreInt64(&this.readIndex, int64(0))
-			}else {
+			} else {
 				atomic.AddInt64(&this.readIndex, int64(1))
 			}
 
@@ -161,33 +161,32 @@ func (this *buffer)ReadBuffer() ([]byte, int64, bool) {
 
 }
 
-
 /**
 2016.03.03 添加
 写入ringbuffer指针，以及将写序号加1
- */
-func (this *buffer)WriteBuffer(in []byte) (bool) {
+*/
+func (this *buffer) WriteBuffer(in []byte) bool {
 	this.wcond.L.Lock()
 	defer this.wcond.L.Unlock()
 
 	for {
 		readIndex := atomic.LoadInt64(&this.readIndex)
 		writeIndex := atomic.LoadInt64(&this.writeIndex)
-		switch  {
-		case writeIndex - readIndex < 0:
+		switch {
+		case writeIndex-readIndex < 0:
 			this.wcond.Wait()
 		default:
 			index := writeIndex & this.mask
 			if writeIndex == math.MaxInt64 {
 				atomic.StoreInt64(&this.writeIndex, int64(0))
-			}else {
+			} else {
 				atomic.AddInt64(&this.writeIndex, int64(1))
 			}
 			if this.ringBuffer[index] == nil {
-				this.ringBuffer[index] = &ByteArray{bArray:in}
+				this.ringBuffer[index] = &ByteArray{bArray: in}
 				this.rcond.Broadcast()
 				return true
-			}else {
+			} else {
 				this.rcond.Broadcast()
 				return false
 			}
@@ -199,7 +198,7 @@ func (this *buffer)WriteBuffer(in []byte) (bool) {
 /**
 2016.03.03 修改
 完成
- */
+*/
 func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
 	atomic.StoreInt64(&this.done, 1)
@@ -214,6 +213,7 @@ func (this *buffer) Close() error {
 
 	return nil
 }
+
 /*
 
 /**
@@ -227,7 +227,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		b := make([]byte, 0, 1)
+		b := make([]byte, 0, 5)
 		n, err := r.Read(b[0:1])
 
 		if n > 0 {
@@ -240,7 +240,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		/**************************/
 		cnt := 1
 
-
 		// Let's read enough bytes to get the message header (msg type, remaining length)
 		for {
 			// If we have read 5 bytes and still not done, then there's a problem.
@@ -252,12 +251,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
 			})
 			// Peek cnt bytes from the input buffer.
-			tmpb:=make([]byte,0,1)
-			_, err := r.Read(tmpb[0:1])
+			_, err := r.Read(b[cnt:(cnt + 1)])
 			if err != nil {
 				return 0, err
 			}
-			b=append(b,tmpb)
 			// If we got enough bytes, then check the last byte to see if the continuation
 			// bit is set. If so, increment cnt and continue peeking
 			if b[cnt] >= 0x80 {
@@ -314,7 +311,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 /**
 2016.03.03 修改
- */
+*/
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer this.Close()
 	total := int64(0)
@@ -371,7 +368,6 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	}
 }
 
-
 /**
 2016.03.03 修改
 */
@@ -384,7 +380,7 @@ func (this *buffer) isDone() bool {
 }
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n & (n - 1)) == 0
+	return n != 0 && (n&(n-1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
