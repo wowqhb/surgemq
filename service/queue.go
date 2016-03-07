@@ -87,12 +87,11 @@ func init() {
 			case client := <-ClientMapProcessor:
 				client_id := client.Name
 
-				Log.Debugc(func() string {
-					return fmt.Sprintf("client connected with same client_id: %s. close old connection.", client_id)
-				})
-
 				if ClientMap[client_id] != nil {
 					(*ClientMap[client_id]).Close()
+					Log.Debugc(func() string {
+						return fmt.Sprintf("client connected with same client_id: %s. close old connection.", client_id)
+					})
 				}
 				ClientMap[client_id] = client.Conn
 
