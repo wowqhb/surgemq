@@ -276,7 +276,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_ := int64(remlen)
 		total = remlen_ + int64(len)
 		Log.Infoc(func() string {
-			return fmt.Sprintf("remlen===n===totle: %d===%d===", remlen,n,total)
+			return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen,n,total)
 		})
 		//mtype := message.MessageType(b[0] >> 4)
 		/****************/
