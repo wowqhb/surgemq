@@ -273,8 +273,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//})
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 
-	remlen_ := int64(remlen)
-	total = remlen_ + int64(1) + int64(m)
+	total = remlen + int64(1) + int64(m)
 	//Log.Infoc(func() string {
 	//	return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
 	//})
@@ -286,15 +285,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//if err != nil {
 	//	return 0, err
 	//}
-	b_ := make([]byte,remlen_)
+	b_ := make([]byte,remlen)
 	_, err = r.Read(b_[0:])
 	if err != nil {
 		fmt.Println("写入buffer失败，total：%d", total)
 		return total, err
 	}
-	fmt.Println("写入buffer的byte数组：%m", b)
 	b = append(b, b_...)
-	fmt.Println("写入buffer的byte数组：%m", b)
 
 	//n, err = msg.Decode(b)
 	//if err != nil {
