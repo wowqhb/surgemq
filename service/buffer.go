@@ -330,11 +330,11 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	Log.Debugc(func() string {
-		return fmt.Sprintf("defer this.ReadCommit(%d)", index)
+		return fmt.Sprintf("WriteTo方法读取ringbuffer成功(%d)", index)
 	})
-	Log.Debugc(func() string {
-		return fmt.Sprintf("WriteTo函数》》读取*p：" + p)
-	})
+	//Log.Debugc(func() string {
+	//	return fmt.Sprintf("WriteTo函数》》读取*p：" + p)
+	//})
 
 	//
 	//Log.Errorc(func() string {
