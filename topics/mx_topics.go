@@ -55,8 +55,6 @@ func NewMXProvider() *mxTopics {
 	}
 }
 
-// FIXME 把clientid改为 某上层对象的指针，以便让它能断掉连接
-//TODO: 去掉树形结构，就留一个subscribe函数即可
 func (this *mxTopics) Subscribe(topic []byte, qos byte, sub interface{}, client_id string) (byte, error) {
 	topic_str := string(topic)
 	if !message.ValidQos(qos) {
@@ -311,28 +309,28 @@ func nextMxTopicLevel(topic []byte) ([]byte, []byte, error) {
 			}
 
 			s = stateCHR
-		//       return topic[:i], topic[i+1:], nil
+			//       return topic[:i], topic[i+1:], nil
 
-		//		case '#':
-		//			if i != 0 {
-		//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Wildcard character '#' must occupy entire topic level")
-		//			}
-		//
-		//			s = stateMWC
-		//
-		//		case '+':
-		//			if i != 0 {
-		//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Wildcard character '+' must occupy entire topic level")
-		//			}
-		//
-		//			s = stateSWC
-		//
-		//		case '$':
-		//			if i == 0 {
-		//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Cannot publish to $ topics")
-		//			}
-		//
-		//			s = stateSYS
+			//		case '#':
+			//			if i != 0 {
+			//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Wildcard character '#' must occupy entire topic level")
+			//			}
+			//
+			//			s = stateMWC
+			//
+			//		case '+':
+			//			if i != 0 {
+			//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Wildcard character '+' must occupy entire topic level")
+			//			}
+			//
+			//			s = stateSWC
+			//
+			//		case '$':
+			//			if i == 0 {
+			//				return nil, nil, fmt.Errorf("memtopics/nextTopicLevel: Cannot publish to $ topics")
+			//			}
+			//
+			//			s = stateSYS
 
 		default:
 			if s == stateMWC || s == stateSWC {

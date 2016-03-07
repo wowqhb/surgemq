@@ -100,7 +100,8 @@ type Server struct {
 	// is closed, then it's a signal for it to shutdown as well.
 	quit chan struct{}
 
-	ln net.Listener
+	ln     net.Listener
+	ssl_ln net.Listener
 
 	// A list of services created by the server. We keep track of them so we can
 	// gracefully shut them down if they are still alive when the server goes down.
@@ -146,18 +147,18 @@ func (this *Server) ListenAndServe() error {
 			}
 			tls_config := &tls.Config{Certificates: []tls.Certificate{cer}}
 			ssl_host := fmt.Sprintf("%s:%s", config.GetMulti("ssl_listen_addr", "ssl_port")...)
-			ssl_ln, err := tls.Listen("tcp", ssl_host, tls_config)
+			this.ssl_ln, err = tls.Listen("tcp", ssl_host, tls_config)
 			if err != nil {
 				Log.Error(err)
 				panic(err)
 			}
 			Log.Info("listening ssl: %v", ssl_host)
 
-			defer ssl_ln.Close()
+			defer this.ssl_ln.Close()
 			var tempDelay time.Duration // how long to sleep on accept failure
 
 			for {
-				conn, err := ssl_ln.Accept()
+				conn, err := this.ssl_ln.Accept()
 				if err != nil {
 					// Borrowed from go1.3.3/src/pkg/net/http/server.go:1699
 					if ne, ok := err.(net.Error); ok && ne.Temporary() {
@@ -279,11 +280,10 @@ func (this *Server) Close() error {
 	// We then close the net.Listener, which will force Accept() to return if it's
 	// blocked waiting for new connections.
 	this.ln.Close()
+	this.ssl_ln.Close()
 
 	for _, svc := range this.svcs {
-		Log.Infoc(func() string {
-			return fmt.Sprintf("Stopping service %d", svc.id)
-		})
+		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
 		svc.stop()
 	}
 

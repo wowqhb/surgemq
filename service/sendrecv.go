@@ -15,6 +15,7 @@
 package service
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -45,16 +46,12 @@ func (this *service) receiver() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic(receiver): %v", this.cid(), r)
-			})
+			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
 		}
 
 		this.wgStopped.Done()
 
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) Stopping receiver", this.cid())
-		})
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) Stopping receiver", this.cid()) })
 	}()
 
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting receiver", this.cid())})
@@ -76,21 +73,10 @@ func (this *service) receiver() {
 			//       Log.Errorc(func() string{ return fmt.Sprintf("this.sessMgr is: %v", this.sessMgr)})
 
 			if err != nil {
-				Log.Infoc(func() string {
-					return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
-				})
-				if err == io.EOF {
-					Log.Infoc(func() string {
-						return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
-					})
-					return
-				}
-
-				continue
-			} else {
-				Log.Infoc(func() string {
-					return fmt.Sprintf("向ringbuffer些数据成功！")
-				})
+				Log.Infoc(func() string { return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err) })
+				//         if err != io.EOF {
+				//         }
+				return
 			}
 		}
 
@@ -98,9 +84,7 @@ func (this *service) receiver() {
 	//	Log.Errorc(func() string{ return fmt.Sprintf("(%s) Websocket: %v", this.cid(), ErrInvalidConnectionType)})
 
 	default:
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) %v", this.cid(), ErrInvalidConnectionType)
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("(%s) %v", this.cid(), ErrInvalidConnectionType) })
 	}
 }
 
@@ -109,52 +93,28 @@ func (this *service) sender() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Sendering from panic(sender): %v", this.cid(), r)
-			})
+			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
 		}
 
 		this.wgStopped.Done()
 
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) Stopping sender", this.cid())
-		})
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) Stopping sender", this.cid()) })
 	}()
 
-	//Log.Debugc(func() string {
-	//	return fmt.Sprintf("(%s) Starting sender", this.cid())
-	//})
+	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting sender", this.cid())})
 
 	this.wgStarted.Done()
-	//Log.Debugc(func() string {
-	//	return fmt.Sprintf("sender_1(%s)", this.cid())
-	//})
+
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {
-			//Log.Debugc(func() string {
-			//	return fmt.Sprintf("sender_2(%s)", this.cid())
-			//})
 			_, err := this.out.WriteTo(conn)
-			Log.Debugc(func() string {
-				return fmt.Sprintf("sender_3(%s)", this.cid())
-			})
+
 			if err != nil {
-				Log.Debugc(func() string {
-					return fmt.Sprintf("sender_4(%s)", this.cid())
-				})
-				if err == io.EOF {
-					Log.Errorc(func() string {
-						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
-					})
-					return
+				if err != io.EOF {
+					Log.Errorc(func() string { return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err) })
 				}
-				//return
-				continue
-			} else {
-				Log.Infoc(func() string {
-					return fmt.Sprintf("向conn些数据成功！")
-				})
+				return
 			}
 		}
 
@@ -162,64 +122,152 @@ func (this *service) sender() {
 	//	Log.Errorc(func() string{ return fmt.Sprintf("(%s) Websocket not supported", this.cid())})
 
 	default:
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) Invalid connection type", this.cid())
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("(%s) Invalid connection type", this.cid()) })
 	}
-	Log.Debugc(func() string {
-		return fmt.Sprintf("sender_6(%s)", this.cid())
-	})
+}
+
+// peekMessageSize() reads, but not commits, enough bytes to determine the size of
+// the next message and returns the type and size.
+func (this *service) peekMessageSize() (message.MessageType, int, error) {
+	var (
+		b   []byte
+		err error
+		cnt int = 2
+	)
+
+	if this.in == nil {
+		err = ErrBufferNotReady
+		return 0, 0, err
+	}
+
+	// Let's read enough bytes to get the message header (msg type, remaining length)
+	for {
+		// If we have read 5 bytes and still not done, then there's a problem.
+		if cnt > 5 {
+			return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+		}
+
+		// Peek cnt bytes from the input buffer.
+		b, err = this.in.ReadWait(cnt)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		// If not enough bytes are returned, then continue until there's enough.
+		if len(b) < cnt {
+			continue
+		}
+
+		// If we got enough bytes, then check the last byte to see if the continuation
+		// bit is set. If so, increment cnt and continue peeking
+		if b[cnt-1] >= 0x80 {
+			cnt++
+		} else {
+			break
+		}
+	}
+
+	// Get the remaining length of the message
+	remlen, m := binary.Uvarint(b[1:])
+
+	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
+	total := int(remlen) + 1 + m
+
+	mtype := message.MessageType(b[0] >> 4)
+
+	return mtype, total, err
+}
+
+// peekMessage() reads a message from the buffer, but the bytes are NOT committed.
+// This means the buffer still thinks the bytes are not read yet.
+func (this *service) peekMessage(mtype message.MessageType, total int) (message.Message, int, error) {
+	var (
+		b    []byte
+		err  error
+		i, n int
+		msg  message.Message
+	)
+
+	if this.in == nil {
+		return nil, 0, ErrBufferNotReady
+	}
+
+	// Peek until we get total bytes
+	for i = 0; ; i++ {
+		// Peek remlen bytes from the input buffer.
+		b, err = this.in.ReadWait(total)
+		if err != nil && err != ErrBufferInsufficientData {
+			return nil, 0, err
+		}
+
+		// If not enough bytes are returned, then continue until there's enough.
+		if len(b) >= total {
+			break
+		}
+	}
+
+	msg, err = mtype.New()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	n, err = msg.Decode(b)
+	return msg, n, err
 }
 
 // readMessage() reads and copies a message from the buffer. The buffer bytes are
 // committed as a result of the read.
-func (this *service) readMessage(mtype message.MessageType, total int) (message.Message, error) {
+func (this *service) readMessage(mtype message.MessageType, total int) (message.Message, int, error) {
 	var (
+		b   []byte
 		err error
+		n   int
 		msg message.Message
 	)
 
 	if this.in == nil {
 		err = ErrBufferNotReady
-		return nil, err
+		return nil, 0, err
 	}
 
-	var b []byte
-	var index int64
-	var ok bool
+	if len(this.intmp) < total {
+		this.intmp = make([]byte, total)
+	}
 
-	if this.isDone() {
-		return nil, err
+	// Read until we get total bytes
+	l := 0
+	for l < total {
+		n, err = this.in.Read(this.intmp[l:])
+		l += n
+		Log.Debugc(func() string { return fmt.Sprintf("read %d bytes, total %d", n, l) })
+		if err != nil {
+			return nil, 0, err
+		}
 	}
-	b, index, ok = this.in.ReadBuffer()
-	defer this.in.ReadCommit(index, ok)
-	if !ok {
-		return nil, err
-	}
+
+	b = this.intmp[:total]
 
 	msg, err = mtype.New()
 	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s)NewMessage  Error processing: %v", this.cid(), err)
-		})
-		return nil, err
+		return msg, 0, err
 	}
 
-	_, err = msg.Decode(b)
-	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) Decode Error processing: %v", this.cid(), err)
-		})
-		return nil, err
-	}
-
-	return msg, err
+	n, err = msg.Decode(b)
+	return msg, n, err
 }
 
 // writeMessage() writes a message to the outgoing buffer
-func (this *service) writeMessage(msg message.Message) error {
+func (this *service) writeMessage(msg message.Message) (int, error) {
+	var (
+		l    int = msg.Len()
+		m, n int
+		err  error
+		buf  []byte
+		wrap bool
+	)
+
 	if this.out == nil {
-		return ErrBufferNotReady
+		return 0, ErrBufferNotReady
 	}
 
 	// This is to serialize writes to the underlying buffer. Multiple goroutines could
@@ -234,17 +282,41 @@ func (this *service) writeMessage(msg message.Message) error {
 	// to this client, then they will all block. However, this will do for now.
 	//
 	// FIXME: Try to find a better way than a mutex...if possible.
-	b := make([]byte, msg.Len())
-	n, err := msg.Encode(b)
+	this.wmu.Lock()
+	defer this.wmu.Unlock()
+
+	buf, wrap, err = this.out.WriteWait(l)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	if this.out.WriteBuffer(b) {
-		return err
+	if wrap {
+		if len(this.outtmp) < l {
+			this.outtmp = make([]byte, l)
+		}
+
+		n, err = msg.Encode(this.outtmp[0:])
+		if err != nil {
+			return 0, err
+		}
+
+		m, err = this.out.Write(this.outtmp[0:n])
+		if err != nil {
+			return m, err
+		}
+	} else {
+		n, err = msg.Encode(buf[0:])
+		if err != nil {
+			return 0, err
+		}
+
+		m, err = this.out.WriteCommit(n)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	this.outStat.increment(int64(n))
+	this.outStat.increment(int64(m))
 
-	return nil
+	return m, nil
 }

@@ -19,7 +19,6 @@ import "github.com/surgemq/message"
 func ExampleServer() {
 	// Create a new server
 	svr := &Server{
-
 		KeepAlive:        300,           // seconds
 		ConnectTimeout:   2,             // seconds
 		SessionsProvider: "mem",         // keeps sessions in memory
@@ -28,7 +27,7 @@ func ExampleServer() {
 	}
 
 	// Listen and serve connections at localhost:1883
-	svr.ListenAndServe()
+	svr.ListenAndServe("tcp://:1883")
 }
 
 func ExampleClient() {

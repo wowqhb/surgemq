@@ -24,6 +24,7 @@ import (
 
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/stretchr/testify/require"
+	"github.com/surge/glog"
 	"github.com/surgemq/message"
 )
 
@@ -217,9 +218,7 @@ func TestServiceSub0Pub0(t *testing.T) {
 				count++
 
 				if count == 10 {
-					Log.Debugc(func() string {
-						return fmt.Sprintf("got 10 pub0")
-					})
+					Log.Debugc(func() string { return fmt.Sprintf("got 10 pub0") })
 					close(done2)
 				}
 
@@ -270,9 +269,7 @@ func TestServiceSub1Pub0(t *testing.T) {
 				count++
 
 				if count == 10 {
-					Log.Debugc(func() string {
-						return fmt.Sprintf("got 10 pub0")
-					})
+					Log.Debugc(func() string { return fmt.Sprintf("got 10 pub0") })
 					close(done2)
 				}
 

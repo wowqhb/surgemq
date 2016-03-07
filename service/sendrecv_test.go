@@ -53,11 +53,11 @@ func TestReadMessageSuccess(t *testing.T) {
 
 	svc := newTestBuffer(t, msgBytes)
 
-	m, err := svc.readMessage(message.CONNECT, 62)
+	m, n, err := svc.readMessage(message.CONNECT, 62)
 
 	require.NoError(t, err, "Error decoding message.")
 
-	require.Equal(t, len(msgBytes), "Error decoding message.")
+	require.Equal(t, len(msgBytes), n, "Error decoding message.")
 
 	msg := m.(*message.ConnectMessage)
 
@@ -107,7 +107,7 @@ func TestReadMessageError(t *testing.T) {
 
 	svc := newTestBuffer(t, msgBytes)
 
-	_, err := svc.readMessage(message.CONNECT, 62)
+	_, _, err := svc.readMessage(message.CONNECT, 62)
 
 	require.Error(t, err)
 }
@@ -143,7 +143,7 @@ func TestReadMessageError2(t *testing.T) {
 
 	svc := newTestBuffer(t, msgBytes)
 
-	_, err := svc.readMessage(message.CONNECT, 64)
+	_, _, err := svc.readMessage(message.CONNECT, 64)
 
 	require.Equal(t, io.EOF, err)
 }
@@ -185,12 +185,17 @@ func TestWriteMessage(t *testing.T) {
 
 	require.NoError(t, err)
 
-	err = svc.writeMessage(msg)
+	n, err := svc.writeMessage(msg)
 
 	require.NoError(t, err, "error decoding message.")
 
-	require.Equal(t, len(msgBytes), "error decoding message.")
+	require.Equal(t, len(msgBytes), n, "error decoding message.")
 
+	dst, err := svc.out.ReadPeek(len(msgBytes))
+
+	require.NoError(t, err)
+
+	require.Equal(t, msgBytes, dst, "error decoding message.")
 }
 
 func newTestBuffer(t *testing.T, msgBytes []byte) *service {

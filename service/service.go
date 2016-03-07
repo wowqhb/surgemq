@@ -33,10 +33,8 @@ type (
 )
 
 type stat struct {
-	//消息索引位置；猜测应该是个序号
 	bytes int64
-	//消息数
-	msgs int64
+	msgs  int64
 }
 
 func (this *stat) increment(n int64) {
@@ -91,7 +89,6 @@ type service struct {
 	wgStopped sync.WaitGroup
 
 	// writeMessage mutex - serializes writes to the outgoing buffer.
-	//读写互斥锁
 	wmu sync.Mutex
 	rmu sync.Mutex
 
@@ -102,10 +99,10 @@ type service struct {
 	// then exit.
 	done chan struct{}
 
-	//从connection里读出来的message.Message数组放入in这个buffer里面
+	// Incoming data buffer. Bytes are read from the connection and put in here.
 	in *buffer
 
-	//将要写入到connection的数据（message.Message数组），放入到out这个buffer里面
+	// Outgoing data buffer. Bytes written here are in turn written out to the connection.
 	out *buffer
 
 	// onpub is the method that gets added to the topic subscribers list by the
@@ -115,17 +112,12 @@ type service struct {
 	// For the server, when this method is called, it means there's a message that
 	// should be published to the client on the other end of this connection. So we
 	// will call publish() to send the message.
-	//从上面的描述看onpub类似于回调函数
 	onpub OnPublishFunc
 
-	//入buffer状态
-	inStat stat
-	//出buffer状态
+	inStat  stat
 	outStat stat
 
-	//字面意义：临时入buffer数据
-	intmp []byte
-	//字面意义：临时出buffer数据
+	intmp  []byte
 	outtmp []byte
 
 	subs  []interface{}
@@ -133,58 +125,33 @@ type service struct {
 	rmsgs []*message.PublishMessage
 }
 
-/**
-启动service服务
-*/
 func (this *service) start(client_id string) error {
 	var err error
 
 	//   debug.PrintStack()
 	// Create the incoming ring buffer
-	// TODO: 如果是master_开头的，buffer大一些
-	Log.Debugc(func() string {
-		return fmt.Sprintf("make new buffer for client: %s", client_id)
-	})
+	Log.Debugc(func() string { return fmt.Sprintf("make new buffer for client: %s", client_id) })
 
 	if strings.Contains(client_id, "master") {
-		Log.Debugc(func() string {
-			return fmt.Sprintf("client_id %s is master", client_id)
-		})
 		this.in, err = newBuffer(MasterInBufferSize)
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("make new MasterInBufferSize for client: %s falure", client_id)
-			})
 			return err
 		}
 
 		// Create the outgoing ring buffer
 		this.out, err = newBuffer(MasterOutBufferSize)
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("make new MasterOutBufferSize for client: %s falure", client_id)
-			})
 			return err
 		}
 	} else {
-		Log.Debugc(func() string {
-			return fmt.Sprintf("client_id %s is not master", client_id)
-		})
 		this.in, err = newBuffer(DeviceInBufferSize)
-
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("make new DeviceInBufferSize error for client: %s", client_id)
-			})
 			return err
 		}
 
 		// Create the outgoing ring buffer
 		this.out, err = newBuffer(DeviceOutBufferSize)
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("make new DeviceOutBufferSize error for client: %s", client_id)
-			})
 			return err
 		}
 	}
@@ -194,9 +161,7 @@ func (this *service) start(client_id string) error {
 		// Creat the onPublishFunc so it can be used for published messages
 		this.onpub = func(msg *message.PublishMessage) error {
 			if err := this.publish(msg, nil); err != nil {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("service/onPublish: Error publishing message: %v", err)
-				})
+				Log.Errorc(func() string { return fmt.Sprintf("service/onPublish: Error publishing message: %v", err) })
 				return err
 			}
 
@@ -243,9 +208,7 @@ func (this *service) stop() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
-			})
+			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
 		}
 	}()
 
@@ -256,17 +219,13 @@ func (this *service) stop() {
 
 	// Close quit channel, effectively telling all the goroutines it's time to quit
 	if this.done != nil {
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) closing this.done", this.cid())
-		})
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.done", this.cid()) })
 		close(this.done)
 	}
 
 	// Close the network connection
 	if this.conn != nil {
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) closing this.conn", this.cid())
-		})
+		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
 		this.conn.Close()
 	}
 
@@ -287,15 +246,11 @@ func (this *service) stop() {
 	if !this.client && this.sess != nil {
 		topics, _, err := this.sess.Topics()
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s/%d): %v", this.cid(), this.id, err)
-			})
+			Log.Errorc(func() string { return fmt.Sprintf("(%s/%d): %v", this.cid(), this.id, err) })
 		} else {
 			for _, t := range topics {
 				if err := this.topicsMgr.Unsubscribe([]byte(t), &this.onpub); err != nil {
-					Log.Errorc(func() string {
-						return fmt.Sprintf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err)
-					})
+					Log.Errorc(func() string { return fmt.Sprintf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err) })
 				}
 			}
 		}
@@ -322,12 +277,13 @@ func (this *service) stop() {
 	this.conn = nil
 	this.in = nil
 	this.out = nil
+	ClientMap[this.sess.ID()] = nil
 }
 
 func (this *service) publish(msg *message.PublishMessage, onComplete OnCompleteFunc) error {
 	//Log.Debugc(func() string{ return fmt.Sprintf("service/publish: Publishing %s", msg)})
 	//   Log.Errorc(func() string{ return fmt.Sprintf("msg is : %v", msg)})
-	err := this.writeMessage(msg)
+	_, err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -355,7 +311,7 @@ func (this *service) subscribe(msg *message.SubscribeMessage, onComplete OnCompl
 		return fmt.Errorf("onPublish function is nil. No need to subscribe.")
 	}
 
-	err := this.writeMessage(msg)
+	_, err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -431,7 +387,7 @@ func (this *service) subscribe(msg *message.SubscribeMessage, onComplete OnCompl
 }
 
 func (this *service) unsubscribe(msg *message.UnsubscribeMessage, onComplete OnCompleteFunc) error {
-	err := this.writeMessage(msg)
+	_, err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -495,7 +451,7 @@ func (this *service) unsubscribe(msg *message.UnsubscribeMessage, onComplete OnC
 func (this *service) ping(onComplete OnCompleteFunc) error {
 	msg := message.NewPingreqMessage()
 
-	err := this.writeMessage(msg)
+	_, err := this.writeMessage(msg)
 	if err != nil {
 		return fmt.Errorf("(%s) Error sending %s message: %v", this.cid(), msg.Name(), err)
 	}
@@ -516,5 +472,4 @@ func (this *service) isDone() bool {
 
 func (this *service) cid() string {
 	return fmt.Sprintf("%d/%s", this.id, this.sess.ID())
-
 }

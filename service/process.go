@@ -20,6 +20,7 @@ import (
 	//   "encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -36,9 +37,6 @@ var (
 	MsgPendingTime time.Duration
 )
 
-/**
-2016.03.03 添加
-*/
 // processor() reads messages from the incoming buffer and processes them
 func (this *service) processor() {
 	defer func() {
@@ -64,35 +62,36 @@ func (this *service) processor() {
 
 	for {
 		// 1. Find out what message is next and the size of the message
-		b, index, ok := this.in.ReadBuffer()
-		defer this.in.ReadCommit(index, ok)
-		if !ok {
-			//return
-			continue
-		}
-
-		fmt.Println("进入processor流程")
-		mtype := message.MessageType(b[0] >> 4)
-		/****************/
-		var msg message.Message
-		msg, err := mtype.New()
+		//     this.rmu.Lock()
+		mtype, total, err := this.peekMessageSize()
 		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s)NewMessage  Error processing %s: %v", this.cid(), msg.Name(), err)
-			})
-			//return
-			continue
-		}
-		n, err := msg.Decode(b)
-		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Decode Error processing %s: %v", this.cid(), msg.Name(), err)
-			})
+			if err == io.EOF {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
+				})
+			} else {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) Error peeking next message size: %v", this.cid(), err)
+				})
+			}
 			return
 		}
-		//fmt.Println("processor=>msg.Name=", msg.Name())
-		//fmt.Println("processor=>msg.PacketId=", msg.PacketId())
-		//fmt.Println("processor=>msg.Desc=", msg.Desc())
+
+		msg, n, err := this.peekMessage(mtype, total)
+		if err != nil {
+			if err == io.EOF {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
+				})
+			} else {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) Error peeking next message: %v", this.cid(), err)
+				})
+			}
+			return
+		}
+		//     this.rmu.Unlock()
+
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
 
 		this.inStat.increment(int64(n))
@@ -110,15 +109,15 @@ func (this *service) processor() {
 		}
 
 		// 7. We should commit the bytes in the buffer so we can move on
-		//_, err = this.in.ReadCommit(total)
-		//if err != nil {
-		//	if err != io.EOF {
-		//		Log.Errorc(func() string {
-		//			return fmt.Sprintf("(%s) Error committing %d read bytes: %v", this.cid(), total, err)
-		//		})
-		//	}
-		//	return
-		//}
+		_, err = this.in.ReadCommit(total)
+		if err != nil {
+			if err != io.EOF {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) Error committing %d read bytes: %v", this.cid(), total, err)
+				})
+			}
+			return
+		}
 
 		// 7. Check to see if done is closed, if so, exit
 		if this.isDone() && this.in.Len() == 0 {
@@ -133,9 +132,7 @@ func (this *service) processor() {
 
 func (this *service) processIncoming(msg message.Message) error {
 	var err error = nil
-	Log.Errorc(func() string {
-		return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T(len=%d)", this.subs, len(this.subs), msg, msg.PacketId())
-	})
+	//   Log.Errorc(func() string{ return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T", this.subs, len(this.subs), msg)})
 
 	switch msg := (msg).(type) {
 	case *message.PublishMessage:
@@ -163,7 +160,7 @@ func (this *service) processIncoming(msg message.Message) error {
 
 		resp := message.NewPubrelMessage()
 		resp.SetPacketId(msg.PacketId())
-		err = this.writeMessage(resp)
+		_, err = this.writeMessage(resp)
 
 	case *message.PubrelMessage:
 		// For PUBREL message, it means QoS 2, we should send to ack queue, and send back PUBCOMP
@@ -175,7 +172,7 @@ func (this *service) processIncoming(msg message.Message) error {
 
 		resp := message.NewPubcompMessage()
 		resp.SetPacketId(msg.PacketId())
-		err = this.writeMessage(resp)
+		_, err = this.writeMessage(resp)
 
 	case *message.PubcompMessage:
 		// For PUBCOMP message, it means QoS 2, we should send to ack queue
@@ -206,7 +203,7 @@ func (this *service) processIncoming(msg message.Message) error {
 	case *message.PingreqMessage:
 		// For PINGREQ message, we should send back PINGRESP
 		resp := message.NewPingrespMessage()
-		err = this.writeMessage(resp)
+		_, err = this.writeMessage(resp)
 
 	case *message.PingrespMessage:
 		this.sess.Pingack.Ack(msg)
@@ -279,9 +276,7 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			}
 
 		case message.PUBACK, message.PUBCOMP, message.SUBACK, message.UNSUBACK, message.PINGRESP:
-			Log.Debugc(func() string {
-				return fmt.Sprintf("process/processAcked: %s", ack)
-			})
+			Log.Debugc(func() string { return fmt.Sprintf("process/processAcked: %s", ack) })
 			// If ack is PUBACK, that means the QoS 1 message sent by this service got
 			// ack'ed. There's nothing to do other than calling onComplete() below.
 
@@ -300,9 +295,7 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			err = nil
 
 		default:
-			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State)
-			})
+			Log.Errorc(func() string { return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State) })
 			continue
 		}
 
@@ -315,9 +308,7 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 				})
 			} else if onComplete != nil {
 				if err := onComplete(msg, ack, nil); err != nil {
-					Log.Errorc(func() string {
-						return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err)
-					})
+					Log.Errorc(func() string { return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err) })
 				}
 			}
 		}
@@ -336,7 +327,7 @@ func (this *service) processPublish(msg *message.PublishMessage) error {
 		resp := message.NewPubrecMessage()
 		resp.SetPacketId(msg.PacketId())
 
-		err := this.writeMessage(resp)
+		_, err := this.writeMessage(resp)
 
 		err = this._process_publish(msg)
 		return err
@@ -345,7 +336,7 @@ func (this *service) processPublish(msg *message.PublishMessage) error {
 		resp := message.NewPubackMessage()
 		resp.SetPacketId(msg.PacketId())
 
-		if err := this.writeMessage(resp); err != nil {
+		if _, err := this.writeMessage(resp); err != nil {
 			return err
 		}
 
@@ -379,7 +370,7 @@ func (this *service) processSubscribe(msg *message.SubscribeMessage) error {
 		rqos, err := this.topicsMgr.Subscribe(t, qos[i], &this.onpub, this.sess.ID())
 		//     rqos, err := this.topicsMgr.Subscribe(t, qos[i], &this)
 		if err != nil {
-			this.conn.Close()
+			this.stop()
 			return err
 		}
 		this.sess.AddTopic(string(t), qos[i])
@@ -396,7 +387,7 @@ func (this *service) processSubscribe(msg *message.SubscribeMessage) error {
 		return err
 	}
 
-	if err := this.writeMessage(resp); err != nil {
+	if _, err := this.writeMessage(resp); err != nil {
 		return err
 	}
 
@@ -428,7 +419,7 @@ func (this *service) processUnsubscribe(msg *message.UnsubscribeMessage) error {
 	resp := message.NewUnsubackMessage()
 	resp.SetPacketId(msg.PacketId())
 
-	err := this.writeMessage(resp)
+	_, err := this.writeMessage(resp)
 	return err
 }
 
@@ -444,11 +435,11 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 
 	//   var subs []interface{}
 	subs := _get_temp_subs()
+	defer _return_temp_subs(subs)
+
 	err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &subs, &this.qoss)
 	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err)
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err) })
 		return err
 	}
 
@@ -462,9 +453,7 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("Invalid onPublish Function: %T", s)
-				})
+				Log.Errorc(func() string { return fmt.Sprintf("Invalid onPublish Function: %T", s) })
 				return fmt.Errorf("Invalid onPublish Function")
 			} else {
 				(*fn)(msg)
@@ -491,6 +480,7 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 	datas := strings.Split(string(msg.Payload()), ":")
 	//   datas := strings.Split(fmt.Sprintf("%s", msg.Payload()), ":")
 	if len(datas) != 2 {
+		Log.Errorc(func() string { return fmt.Sprintf("invalid message payload: %s", msg.Payload()) })
 		return errors.New(fmt.Sprintf("invalid message payload: %s", msg.Payload()))
 	}
 
@@ -503,9 +493,7 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 
 	payload_bytes, err := base64.StdEncoding.DecodeString(payload_base64)
 	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("can't decode payload: %s", payload_base64)
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", payload_base64) })
 	}
 
 	err = ffjson.Unmarshal([]byte(payload_bytes), &badge_message)
@@ -528,22 +516,18 @@ func (this *service) onGroupPublish(msg *message.PublishMessage) (err error) {
 	)
 
 	Log.Infoc(func() string {
-		return fmt.Sprintln("receive group msgs.")
+		return "receive group msgs.\n"
 	})
 
 	err = ffjson.Unmarshal(msg.Payload(), &broadcast_msg)
 	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("can't parse message json: %s", msg.Payload())
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("can't parse message json: %s", msg.Payload()) })
 		return
 	}
 
 	payload, err = base64.StdEncoding.DecodeString(broadcast_msg.Payload)
 	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload)
-		})
+		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload) })
 		return
 	}
 
@@ -660,7 +644,28 @@ func _process_ack(pkg_id uint16) {
 
 // 从池子里获取一个长度为1的slice，用于填充订阅队列
 func _get_temp_subs() (subs []interface{}) {
-	subs = <-SubscribersSliceQueue
+	select {
+	case subs = <-SubscribersSliceQueue:
+		// 成功从缓存池里拿到，直接返回
+	default:
+		// 拿不到，说明池子里没对象了，就地创建一个
+		subs = make([]interface{}, 1, 1)
+	}
+	return
+}
+
+// 把subs返还池子
+func _return_temp_subs(subs []interface{}) {
+	subs[0] = nil
+	select {
+	case SubscribersSliceQueue <- subs:
+		// 成功返还，什么都不做
+	default:
+		subs = nil
+		Log.Errorc(func() string {
+			return "return temp subs failed, may be the SubscribersSliceQueue is full!"
+		})
+	}
 	return
 }
 

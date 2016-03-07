@@ -27,6 +27,7 @@ import (
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/stretchr/testify/require"
+	"github.com/surge/glog"
 	"github.com/surgemq/message"
 )
 
@@ -105,9 +106,7 @@ func startServiceN(t testing.TB, u *url.URL, wg *sync.WaitGroup, ready1, ready2 
 	<-ready2
 
 	for _, svc := range svr.svcs {
-		Log.Infoc(func() string {
-			return fmt.Sprintf("Stopping service %d", svc.id)
-		})
+		Log.Infoc(func() string { return fmt.Sprintf("Stopping service %d", svc.id) })
 		svc.stop()
 	}
 

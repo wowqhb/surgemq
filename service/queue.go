@@ -18,8 +18,9 @@ var (
 	OfflineTopicGetProcessor = make(chan string)
 	OfflineTopicGetChannel   = make(chan [][]byte)
 
-	ClientMap          = make(map[string]*net.Conn)
-	ClientMapProcessor = make(chan *ClientHash, 1024)
+	ClientMap               = make(map[string]*net.Conn)
+	ClientMapProcessor      = make(chan *ClientHash, 1024)
+	ClientMapCleanProcessor = make(chan string)
 
 	PkgIdProcessor = make(chan bool, 1024)
 	PkgIdGenerator = make(chan uint16, 1024)
@@ -38,7 +39,7 @@ type ClientHash struct {
 
 func init() {
 	go func() {
-		for {
+		for i := 0; i < 2048; i++ {
 			SubscribersSliceQueue <- make([]interface{}, 1, 1)
 		}
 	}()
@@ -86,15 +87,23 @@ func init() {
 
 			case client := <-ClientMapProcessor:
 				client_id := client.Name
+				client_conn := client.Conn
+				client = nil
 
 				if ClientMap[client_id] != nil {
-					(*ClientMap[client_id]).Close()
+					old_conn := *ClientMap[client_id]
+					old_conn.Close()
+					old_conn = nil
 					Log.Debugc(func() string {
 						return fmt.Sprintf("client connected with same client_id: %s. close old connection.", client_id)
 					})
 				}
-				ClientMap[client_id] = client.Conn
+				ClientMap[client_id] = client_conn
 
+			case client_id := <-ClientMapCleanProcessor:
+				old_conn := *ClientMap[client_id]
+				old_conn.Close()
+				old_conn = nil
 			case _ = <-PkgIdProcessor:
 				PkgIdGenerator <- PkgId
 				PkgId++
