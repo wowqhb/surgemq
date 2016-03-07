@@ -79,9 +79,13 @@ func (this *service) receiver() {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
 				})
-				//         if err != io.EOF {
-				//         }
-				//return
+				if err == io.EOF {
+					Log.Infoc(func() string {
+						return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
+					})
+					return
+				}
+
 				continue
 			} else {
 				Log.Infoc(func() string {
@@ -139,10 +143,11 @@ func (this *service) sender() {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("sender_4(%s)", this.cid())
 				})
-				if err != io.EOF {
+				if err == io.EOF {
 					Log.Errorc(func() string {
 						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
 					})
+					return
 				}
 				//return
 				continue
