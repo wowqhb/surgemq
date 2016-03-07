@@ -227,7 +227,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//if this.isDone() {
 	//	return total, io.EOF
 	//}
-	b := make([]byte, 5)
+	b := make([]byte, int64(5))
 	n, err := r.Read(b[0:1])
 
 	if n > 0 {
@@ -273,7 +273,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//})
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 
-	total = remlen + int64(1) + int64(m)
+	total = int64(remlen) + int64(1) + int64(m)
 	//Log.Infoc(func() string {
 	//	return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
 	//})
@@ -285,7 +285,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//if err != nil {
 	//	return 0, err
 	//}
-	b_ := make([]byte,remlen)
+	b_ := make([]byte, int64(remlen))
 	_, err = r.Read(b_[0:])
 	if err != nil {
 		fmt.Println("写入buffer失败，total：%d", total)
