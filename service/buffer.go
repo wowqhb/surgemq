@@ -296,7 +296,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		return total, err
 	}
 	b__ := make([]byte, 0, total)
-	fmt.Println(b_)
 	b__ = append(b__, b[0:1+m]...)
 	b__ = append(b__, b_[0:]...)
 	fmt.Println(b__)
