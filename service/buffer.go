@@ -62,6 +62,7 @@ type ByteArray struct {
 }
 
 func (this *buffer) ReadCommit(index int64) {
+	this.rcond.L.Lock()
 	defer this.rcond.L.Unlock()
 	this.ringBuffer[index] = nil
 	this.wcond.Broadcast()
@@ -123,7 +124,7 @@ func (this *buffer) GetCurrentWriteIndex() int64 {
 */
 func (this *buffer) ReadBuffer() ([]byte, int64, bool) {
 	this.rcond.L.Lock()
-
+	defer this.rcond.L.Unlock()
 	for {
 		readIndex := atomic.LoadInt64(&this.readIndex)
 		writeIndex := atomic.LoadInt64(&this.writeIndex)
