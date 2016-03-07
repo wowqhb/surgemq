@@ -253,9 +253,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			// Peek cnt bytes from the input buffer.
 
 			_, err := r.Read(b[cnt:(cnt + 1)])
-			Log.Infoc(func() string {
-				return fmt.Sprintf("_, err := r.Read(b[cnt:(cnt + 1)]): b[cnt](%s)", b[cnt])
-			})
+			return 0,err
 			if err != nil {
 				return 0, err
 			}
