@@ -224,91 +224,91 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 	//for {
 
-		//if this.isDone() {
-		//	return total, io.EOF
-		//}
-		b := make([]byte, 5)
-		n, err := r.Read(b[0:1])
+	//if this.isDone() {
+	//	return total, io.EOF
+	//}
+	b := make([]byte, 5)
+	n, err := r.Read(b[0:1])
 
-		if n > 0 {
-			total += int64(n)
-			if err != nil {
-				return total, err
-			}
+	if n > 0 {
+		total += int64(n)
+		if err != nil {
+			return total, err
+		}
+	}
+
+	/**************************/
+	cnt := 1
+
+	// Let's read enough bytes to get the message header (msg type, remaining length)
+	for {
+		// If we have read 5 bytes and still not done, then there's a problem.
+		if cnt > 4 {
+			return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 		}
 
-		/**************************/
-		cnt := 1
+		Log.Infoc(func() string {
+			return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
+		})
+		// Peek cnt bytes from the input buffer.
 
-		// Let's read enough bytes to get the message header (msg type, remaining length)
-		for {
-			// If we have read 5 bytes and still not done, then there's a problem.
-			if cnt > 4 {
-				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-			}
-
-			Log.Infoc(func() string {
-				return fmt.Sprintf("sendrecv/peekMessageSize: %d=========", cnt)
-			})
-			// Peek cnt bytes from the input buffer.
-
-			_, err := r.Read(b[cnt:(cnt + 1)])
-			//fmt.Println(b)
-			if err != nil {
-				return 0, err
-			}
-			// If we got enough bytes, then check the last byte to see if the continuation
-			// bit is set. If so, increment cnt and continue peeking
-			if b[cnt] >= 0x80 {
-				cnt++
-			} else {
-				break
-			}
-		}
-
-		// Get the remaining length of the message
-		remlen, m := binary.Uvarint(b[1:])
-		//Log.Infoc(func() string {
-		//	return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
-		//})
-		// Total message length is remlen + 1 (msg type) + m (remlen bytes)
-
-		remlen_ := int64(remlen)
-		total = remlen_ + int64(1) + int64(m)
-		//Log.Infoc(func() string {
-		//	return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
-		//})
-		//mtype := message.MessageType(b[0] >> 4)
-		/****************/
-		//var msg message.Message
-		//
-		//msg, err = mtype.New()
-		//if err != nil {
-		//	return 0, err
-		//}
-		b_ := make([]byte, 0, remlen_)
-		_, err = r.Read(b_[0:])
+		_, err := r.Read(b[cnt:(cnt + 1)])
+		//fmt.Println(b)
 		if err != nil {
 			return 0, err
 		}
-
-		b = append(b, b_...)
-		fmt.Println(b)
-		Log.Infoc(func() string {
-			return fmt.Sprintf("len(b):%d", len(b))
-		})
-		//n, err = msg.Decode(b)
-		//if err != nil {
-		//	return 0, err
-		//}
-
-		/*************************/
-
-		if !this.WriteBuffer(b) {
-			return total, err
+		// If we got enough bytes, then check the last byte to see if the continuation
+		// bit is set. If so, increment cnt and continue peeking
+		if b[cnt] >= 0x80 {
+			cnt++
+		} else {
+			break
 		}
+	}
 
-		return total, nil
+	// Get the remaining length of the message
+	remlen, m := binary.Uvarint(b[1:])
+	//Log.Infoc(func() string {
+	//	return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
+	//})
+	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
+
+	remlen_ := int64(remlen)
+	total = remlen_ + int64(1) + int64(m)
+	//Log.Infoc(func() string {
+	//	return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
+	//})
+	//mtype := message.MessageType(b[0] >> 4)
+	/****************/
+	//var msg message.Message
+	//
+	//msg, err = mtype.New()
+	//if err != nil {
+	//	return 0, err
+	//}
+	b_ := make([]byte, 0, remlen_)
+	_, err = r.Read(b_[0:])
+	if err != nil {
+		return 0, err
+	}
+
+	b = append(b, b_...)
+	fmt.Println(b)
+	Log.Infoc(func() string {
+		return fmt.Sprintf("len(b):%d", len(b))
+	})
+	//n, err = msg.Decode(b)
+	//if err != nil {
+	//	return 0, err
+	//}
+
+	/*************************/
+
+	if !this.WriteBuffer(b) {
+		return total, err
+	}
+
+	return total, nil
 	//}
 }
 
@@ -318,57 +318,57 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer this.Close()
 	total := int64(0)
-	for {
-		if this.isDone() {
-			return total, io.EOF
-		}
-		p, index, ok := this.ReadBuffer()
-		defer this.ReadCommit(index)
-		if !ok {
-			return total, io.EOF
-		}
-
-		Log.Debugc(func() string {
-			return fmt.Sprintf("defer this.ReadCommit(%s)", index)
-		})
-		Log.Debugc(func() string {
-			return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
-		})
-
-		Log.Debugc(func() string {
-			return fmt.Sprintf(" WriteTo(w io.Writer)(7)")
-		})
-		//
-		//Log.Errorc(func() string {
-		//	return fmt.Sprintf("msg::" + msg.Name())
-		//})
-		//
-		//p := make([]byte, msg.Len())
-		//_, err := msg.Encode(p)
-		//if err != nil {
-		//	Log.Errorc(func() string {
-		//		return fmt.Sprintf("msg.Encode(p)")
-		//	})
-		//	return total, io.EOF
-		//}
-		// There's some data, let's process it first
-		if len(p) > 0 {
-			n, err := w.Write(p)
-			total += int64(n)
-			Log.Debugc(func() string {
-				return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)
-			})
-
-			if err != nil {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("w.Write(p) error")
-				})
-				return total, err
-			}
-		}
-
-		return total, nil
+	//for {
+	//if this.isDone() {
+	//	return total, io.EOF
+	//}
+	p, index, ok := this.ReadBuffer()
+	defer this.ReadCommit(index)
+	if !ok {
+		return total, io.EOF
 	}
+
+	Log.Debugc(func() string {
+		return fmt.Sprintf("defer this.ReadCommit(%s)", index)
+	})
+	Log.Debugc(func() string {
+		return fmt.Sprintf("WriteTo函数》》读取*p：" + string(p))
+	})
+
+	Log.Debugc(func() string {
+		return fmt.Sprintf(" WriteTo(w io.Writer)(7)")
+	})
+	//
+	//Log.Errorc(func() string {
+	//	return fmt.Sprintf("msg::" + msg.Name())
+	//})
+	//
+	//p := make([]byte, msg.Len())
+	//_, err := msg.Encode(p)
+	//if err != nil {
+	//	Log.Errorc(func() string {
+	//		return fmt.Sprintf("msg.Encode(p)")
+	//	})
+	//	return total, io.EOF
+	//}
+	// There's some data, let's process it first
+	if len(p) > 0 {
+		n, err := w.Write(p)
+		total += int64(n)
+		Log.Debugc(func() string {
+			return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)
+		})
+
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("w.Write(p) error")
+			})
+			return total, err
+		}
+	}
+
+	return total, nil
+	//}
 }
 
 /**
