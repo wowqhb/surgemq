@@ -125,7 +125,10 @@ func (this *buffer) GetCurrentWriteIndex() int64 {
 */
 func (this *buffer) ReadBuffer() ([]byte, int64, bool) {
 	this.rcond.L.Lock()
-	defer this.rcond.L.Unlock()
+	defer func() {
+		this.wcond.Broadcast()
+		this.rcond.L.Unlock()
+	}()
 
 	for {
 		readIndex := atomic.LoadInt64(&this.readIndex)
@@ -167,7 +170,10 @@ func (this *buffer) ReadBuffer() ([]byte, int64, bool) {
 */
 func (this *buffer) WriteBuffer(in []byte) bool {
 	this.wcond.L.Lock()
-	defer this.wcond.L.Unlock()
+	defer func() {
+		this.rcond.Broadcast()
+		this.wcond.L.Unlock()
+	}()
 
 	for {
 		readIndex := atomic.LoadInt64(&this.readIndex)
@@ -184,10 +190,8 @@ func (this *buffer) WriteBuffer(in []byte) bool {
 			}
 			if this.ringBuffer[index] == nil {
 				this.ringBuffer[index] = &ByteArray{bArray: in}
-				this.rcond.Broadcast()
 				return true
 			} else {
-				this.rcond.Broadcast()
 				return false
 			}
 		}
