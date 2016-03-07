@@ -227,7 +227,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		b := make([]byte, 0, 6)
+		b := make([]byte, 5)
 		n, err := r.Read(b[0:1])
 
 		if n > 0 {
@@ -267,7 +267,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		// Get the remaining length of the message
-		remlen, m := binary.Uvarint(b[1 : cnt+1])
+		remlen, m := binary.Uvarint(b[1:])
 		Log.Infoc(func() string {
 			return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
 		})
