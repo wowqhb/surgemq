@@ -289,14 +289,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b_ := make([]byte, 0, remlen_)
 	_, err = r.Read(b_[0:])
 	if err != nil {
-		return 0, err
+		fmt.Println("写入buffer失败，total：%d", total)
+		return total, err
 	}
 
 	b = append(b, b_...)
-	fmt.Println("写入buffer的byte数组：%m",b)
-	Log.Infoc(func() string {
-		return fmt.Sprintf("len(b):%d", len(b))
-	})
+	fmt.Println("写入buffer的byte数组：%m", b)
+
 	//n, err = msg.Decode(b)
 	//if err != nil {
 	//	return 0, err
