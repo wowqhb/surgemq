@@ -253,7 +253,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			// Peek cnt bytes from the input buffer.
 
 			_, err := r.Read(b[cnt:(cnt + 1)])
-			fmt.Println(b)
+			//fmt.Println(b)
 			if err != nil {
 				return 0, err
 			}
@@ -268,16 +268,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		// Get the remaining length of the message
 		remlen, m := binary.Uvarint(b[1:])
-		Log.Infoc(func() string {
-			return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
-		})
+		//Log.Infoc(func() string {
+		//	return fmt.Sprintf("b[cnt:(cnt + 1)]==end")
+		//})
 		// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 
 		remlen_ := int64(remlen)
 		total = remlen_ + int64(1) + int64(m)
-		Log.Infoc(func() string {
-			return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
-		})
+		//Log.Infoc(func() string {
+		//	return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen, m, total)
+		//})
 		//mtype := message.MessageType(b[0] >> 4)
 		/****************/
 		//var msg message.Message
@@ -293,6 +293,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		b = append(b, b_...)
+		fmt.Println(b)
 		Log.Infoc(func() string {
 			return fmt.Sprintf("len(b):%d", len(b))
 		})
