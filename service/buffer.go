@@ -221,8 +221,9 @@ func (this *buffer) Close() error {
 */
 func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer this.Close()
+	total := int64(0)
 	for {
-		total := int64(0)
+
 		if this.isDone() {
 			return total, io.EOF
 		}
