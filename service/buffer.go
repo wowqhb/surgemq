@@ -224,9 +224,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 	//for {
 
-	if this.isDone() {
-		return total, io.EOF
-	}
+	//if this.isDone() {
+	//	return total, io.EOF
+	//}
 	b := make([]byte, int64(5))
 	n, err := r.Read(b[0:1])
 
@@ -318,9 +318,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer this.Close()
 	total := int64(0)
 	//for {
-	if this.isDone() {
-		return total, io.EOF
-	}
+	//if this.isDone() {
+	//	return total, io.EOF
+	//}
 	p, index, ok := this.ReadBuffer()
 	defer this.ReadCommit(index)
 	if !ok {
