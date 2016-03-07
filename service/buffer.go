@@ -291,20 +291,17 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b__ := make([]byte, 0, total)
 	b__ = append(b__, b[0:1+m]...)
-	//for i := int64(0); i < int64(remlen); i++ {
-		//b_ := make([]byte, int64(1))
-		b_ := make([]byte, remlen)
-		n, err = r.Read(b_)
+	b_ := make([]byte, remlen)
+	n, err = r.Read(b_)
 
-		if err != nil {
-			Log.Errorc(func() string {
-				return fmt.Sprintf("从conn读取数据失败(%s)", err)
-			})
-			time.Sleep(2 * time.Millisecond)
-			//return total, err
-		}
-		b__ = append(b__, b_[0:]...)
-	//}
+	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("从conn读取数据失败(%s)", err)
+		})
+		//time.Sleep(2 * time.Millisecond)
+		return total, err
+	}
+	b__ = append(b__, b_[0:]...)
 
 	fmt.Println("readfrom 3th read conn:", err, "读取数量：", n)
 	fmt.Println(b__)
