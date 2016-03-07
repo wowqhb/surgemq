@@ -200,7 +200,7 @@ func (this *buffer) WriteBuffer(in []byte) bool {
 完成
 */
 func (this *buffer) Close() error {
-	atomic.StoreInt64(&this.done, 1)
+	//atomic.StoreInt64(&this.done, 1)
 
 	this.wcond.L.Lock()
 	this.rcond.Broadcast()
@@ -375,9 +375,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 2016.03.03 修改
 */
 func (this *buffer) isDone() bool {
-	if atomic.LoadInt64(&this.done) == 1 {
-		return true
-	}
+	//if atomic.LoadInt64(&this.done) == 1 {
+	//	return true
+	//}
 
 	return false
 }
