@@ -267,14 +267,14 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		// Get the remaining length of the message
-		remlen, n := binary.Uvarint(b[1:])
+		remlen, m := binary.Uvarint(b[1:])
 		Log.Infoc(func() string {
 			return fmt.Sprintf("remlen: %d===%d", remlen,n)
 		})
 		// Total message length is remlen + 1 (msg type) + m (remlen bytes)
-		len := int64(len(b))
+
 		remlen_ := int64(remlen)
-		total = remlen_ + int64(len)
+		total = remlen_ + 1 + m
 		Log.Infoc(func() string {
 			return fmt.Sprintf("remlen===n===totle: %d===%d===%d", remlen,n,total)
 		})
