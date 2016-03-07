@@ -65,11 +65,12 @@ func (this *service) processor() {
 	for {
 		// 1. Find out what message is next and the size of the message
 		b, index, ok := this.in.ReadBuffer()
+		defer this.in.ReadCommit(index, ok)
 		if !ok {
 			//return
 			continue
 		}
-		defer this.in.ReadCommit(index, ok)
+
 		fmt.Println("进入processor流程")
 		mtype := message.MessageType(b[0] >> 4)
 		/****************/
