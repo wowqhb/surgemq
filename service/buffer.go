@@ -293,7 +293,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	}
 	fmt.Println(b_)
 	b = append(b, b_[0:]...)
-
+	fmt.Println(b)
 	//n, err = msg.Decode(b)
 	//if err != nil {
 	//	return 0, err
