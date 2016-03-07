@@ -291,9 +291,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	b__ := make([]byte, 0, total)
 	b__ = append(b__, b[0:1+m]...)
-	for i := int64(0); i < int64(remlen); i++ {
+	//for i := int64(0); i < int64(remlen); i++ {
 		//b_ := make([]byte, int64(1))
-		b_ := []byte{}
+		b_ := make([]byte, remlen)
 		n, err = r.Read(b_)
 
 		if err != nil {
@@ -304,7 +304,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			//return total, err
 		}
 		b__ = append(b__, b_[0:]...)
-	}
+	//}
 
 	fmt.Println("readfrom 3th read conn:", err, "读取数量：", n)
 	fmt.Println(b__)
