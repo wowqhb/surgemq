@@ -107,10 +107,6 @@ func (this *service) sender() {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s) Sendering from panic(sender): %v", this.cid(), r)
 			})
-		} else {
-			Log.Infoc(func() string {
-				return fmt.Sprintf("向conn些数据成功！")
-			})
 		}
 
 		this.wgStopped.Done()
