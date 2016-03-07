@@ -8,13 +8,13 @@ import (
 
 var (
 	PendingQueue = make([]*message.PublishMessage, 65536, 65536)
-	//   PendingProcessor = make(chan *message.PublishMessage, 65536)
+//   PendingProcessor = make(chan *message.PublishMessage, 65536)
 
 	OfflineTopicQueue          = make(map[string][][]byte)
 	OfflineTopicQueueProcessor = make(chan *message.PublishMessage, 2048)
 	OfflineTopicCleanProcessor = make(chan string, 2048)
 
-	// 由于这个需要一一对应，并且把结果传回去，所以不能带缓冲。
+// 由于这个需要一一对应，并且把结果传回去，所以不能带缓冲。
 	OfflineTopicGetProcessor = make(chan string)
 	OfflineTopicGetChannel   = make(chan [][]byte)
 
