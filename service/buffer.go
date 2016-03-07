@@ -227,7 +227,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		b := make([]byte, 5)
+		b := make([]byte,0, 5)
 		n, err := r.Read(b[0:1])
 
 		if n > 0 {
@@ -286,7 +286,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		//if err != nil {
 		//	return 0, err
 		//}
-		b_ := make([]byte, remlen_)
+		b_ := make([]byte,0, remlen_)
 		_, err = r.Read(b_[0:])
 		if err != nil {
 			return 0, err
@@ -294,7 +294,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		b = append(b, b_...)
 		Log.Infoc(func() string {
-			return fmt.Sprintf("len(b):", len(b))
+			return fmt.Sprintf("len(b):%d", len(b))
 		})
 		//n, err = msg.Decode(b)
 		//if err != nil {
