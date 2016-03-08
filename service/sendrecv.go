@@ -260,7 +260,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 
 // peekMessage() reads a message from the buffer, but the bytes are NOT committed.
 // This means the buffer still thinks the bytes are not read yet.
-func (this *service) peekMessage(mtype message.MessageType, total int) (message.Message, int, error) {
+/*func (this *service) peekMessage(mtype message.MessageType, total int) (message.Message, int, error) {
 	var (
 		b    []byte
 		err  error
@@ -293,7 +293,7 @@ func (this *service) peekMessage(mtype message.MessageType, total int) (message.
 
 	n, err = msg.Decode(b)
 	return msg, n, err
-}
+}*/
 
 // readMessage() reads and copies a message from the buffer. The buffer bytes are
 // committed as a result of the read.

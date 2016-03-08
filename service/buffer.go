@@ -25,19 +25,19 @@ import (
 )
 
 var (
-	bufcnt            int64
+	bufcnt int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize  int64
+	DeviceInBufferSize int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize  int64
+	MasterInBufferSize int64
 	MasterOutBufferSize int64
 )
 
 const (
-	smallRWBlockSize      = 512
-	defaultReadBlockSize  = 8192
+	smallRWBlockSize = 512
+	defaultReadBlockSize = 8192
 	defaultWriteBlockSize = 8192
 )
 
@@ -65,25 +65,25 @@ func (this *sequence) set(seq int64) {
 }
 
 type buffer struct {
-	id int64
+	id             int64
 
-	//buf []byte
-	buf []*[]byte //环形buffer指针数组
-	//tmp []byte
-	tmp  []*[]byte //环形buffer指针数组--临时
-	size int64
-	mask int64
+				 //buf []byte
+	buf            []*[]byte //环形buffer指针数组
+				 //tmp []byte
+	tmp            []*[]byte //环形buffer指针数组--临时
+	size           int64
+	mask           int64
 
-	done int64
+	done           int64
 
-	pseq *sequence
-	cseq *sequence
+	pseq           *sequence
+	cseq           *sequence
 
-	pcond *sync.Cond
-	ccond *sync.Cond
+	pcond          *sync.Cond
+	ccond          *sync.Cond
 
-	cwait int64
-	pwait int64
+	cwait          int64
+	pwait          int64
 
 	readblocksize  int
 	writeblocksize int
@@ -203,7 +203,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1+m]...)
+		b__ = append(b__, b[0:1 + m]...)
 
 		nlen := int64(0)
 		for nlen < remlen_64 {
@@ -403,7 +403,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
 	/*total := ringCopy(this.buf, p, int64(start)&this.mask)*/
-	this.buf[int64(start)&this.mask] = &p
+	this.buf[int64(start) & this.mask] = &p
 	this.pseq.set(start + int64(1 /*len(p)*/))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
@@ -462,7 +462,7 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 	}
 
 	// There's data to peek. The size of the data could be <= n.
-	if cpos+m <= ppos {
+	if cpos + m <= ppos {
 		cindex := cpos & this.mask
 
 		// If cindex (index relative to buffer) + n is more than buffer size, that means
@@ -490,9 +490,12 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 // wait until there's enough. This differs from ReadPeek or Readin that Peek will
 // return whatever is available and won't wait for full count.
 func (this *buffer) ReadWait(n int) ([]byte, error) {
-	if int64(n) > this.size {
-		return nil, bufio.ErrBufferFull
-	}
+	Log.Debugc(func() string {
+		return fmt.Sprintf("ReadWait 开始执行")
+	})
+	//if int64(n) > this.size {
+	//	return nil, bufio.ErrBufferFull
+	//}
 
 	if n < 0 {
 		return nil, bufio.ErrNegativeCount
@@ -531,7 +534,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 		return this.tmp[:n], nil
 	}*/
 
-	return *(this.buf[cindex /* : cindex+int64(n)*/]), nil
+	return *(this.buf[cindex]), nil
 }
 
 // Commit moves the cursor forward by n bytes. It behaves like Read() except it doesn't
@@ -559,7 +562,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos+int64(1) <= ppos {
+	if cpos + int64(1) <= ppos {
 		this.cseq.set(cpos + 1 /*int64(n)*/)
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
@@ -705,7 +708,7 @@ func ringCopy(dst, src []byte, start int64) int {
 }
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n&(n-1)) == 0
+	return n != 0 && (n & (n - 1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
