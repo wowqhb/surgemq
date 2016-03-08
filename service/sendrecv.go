@@ -74,7 +74,7 @@ func (this *service) receiver() {
 		}
 
 		for {
-			/*_, err := */this.in.ReadFrom(r)
+			_, err := this.in.ReadFrom(r)
 			//       Log.Errorc(func() string{ return fmt.Sprintf("this.sess is: %v", this.sess)})
 			//       Log.Errorc(func() string{ return fmt.Sprintf("this.sessMgr is: %v", this.sessMgr)})
 
@@ -84,7 +84,7 @@ func (this *service) receiver() {
 				//         }
 				return
 			}*/
-			/*if err != nil {
+			if err != nil {
 
 				if err == io.EOF {
 					Log.Errorc(func() string {
@@ -102,7 +102,7 @@ func (this *service) receiver() {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("(%s)向ringbuffer些数据成功！", this.cid())
 				})
-			}*/
+			}
 		}
 
 	//case *websocket.Conn:
