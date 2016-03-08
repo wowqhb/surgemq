@@ -260,6 +260,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	total := int64(0)
 
 	for {
+		Log.Infoc(func() string {
+			return fmt.Sprintf("WriteTo发送开始")
+		})
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -285,6 +288,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if err != ErrBufferInsufficientData && err != nil {
 			return total, err
 		}
+		Log.Infoc(func() string {
+			return fmt.Sprintf("WriteTo发送完成")
+		})
 	}
 }
 
