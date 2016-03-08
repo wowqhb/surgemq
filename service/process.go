@@ -40,7 +40,7 @@ var (
 // processor() reads messages from the incoming buffer and processes them
 func (this *service) processor() {
 	Log.Infoc(func() string {
-		return fmt.Sprintf("(%s) processor开始")
+		return fmt.Sprintf("(%s) processor开始", this.cid())
 	})
 	defer func() {
 		// Let's recover from panic
@@ -62,7 +62,6 @@ func (this *service) processor() {
 	//   Log.Errorc(func() string{ return fmt.Sprintf("PendingQueue: %v", PendingQueue[0:10])})
 
 	this.wgStarted.Done()
-
 
 	for {
 		// 1. Find out what message is next and the size of the message

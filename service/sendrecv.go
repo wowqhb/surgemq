@@ -43,7 +43,7 @@ func (r timeoutReader) Read(b []byte) (int, error) {
 // receiver() reads data from the network, and writes the data into the incoming buffer
 func (this *service) receiver() {
 	Log.Infoc(func() string {
-		return fmt.Sprintf("(%s) receiver开始")
+		return fmt.Sprintf("(%s) receiver开始", this.cid())
 	})
 	defer func() {
 		// Let's recover from panic
@@ -118,7 +118,7 @@ func (this *service) receiver() {
 // sender() writes data from the outgoing buffer to the network
 func (this *service) sender() {
 	Log.Infoc(func() string {
-		return fmt.Sprintf("(%s) sender开始")
+		return fmt.Sprintf("(%s) sender开始", this.cid())
 	})
 	defer func() {
 		// Let's recover from panic
