@@ -178,7 +178,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	}()
 
 	total := int64(0)
-	cnt_ := 32 //每次从conn中读取数据的字节数
+	cnt_ := 1 //每次从conn中读取数据的字节数
 	for {
 		Log.Infoc(func() string {
 			return fmt.Sprintf("ReadFrom开始读取", total)
