@@ -15,7 +15,6 @@
 package service
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -161,7 +160,7 @@ func (this *service) sender() {
 
 // peekMessageSize() reads, but not commits, enough bytes to determine the size of
 // the next message and returns the type and size.
-func (this *service) peekMessageSize() (message.MessageType, int, error) {
+func (this *service) peekMessageSize() (message.Message, int, error) {
 	var (
 		b   []byte
 		err error
@@ -198,28 +197,36 @@ func (this *service) peekMessageSize() (message.MessageType, int, error) {
 	} else {
 		break
 	}*/
-	for {
-		if cnt > 5 {
-			return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-		}
-
-		if b[cnt-1] >= 0x80 {
-			cnt++
-		} else {
-			break
-		}
-	}
+	//for {
+	//	if cnt > 5 {
+	//		return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+	//	}
+	//
+	//	if b[cnt-1] >= 0x80 {
+	//		cnt++
+	//	} else {
+	//		break
+	//	}
+	//}
 	//}
 
 	// Get the remaining length of the message
-	remlen, m := binary.Uvarint(b[1:cnt])
+	//remlen, m := binary.Uvarint(b[1:cnt])
 
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
-	total := int(remlen) + 1 + m
+	//total := int(remlen) + 1 + m
 
 	mtype := message.MessageType(b[0] >> 4)
 
-	return mtype, total, err
+	//return mtype, total, err
+	var msg message.Message
+	msg, err = mtype.New()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	_, err = msg.Decode(b)
+	return msg, len(b), err
 }
 
 // peekMessage() reads a message from the buffer, but the bytes are NOT committed.
