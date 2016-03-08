@@ -70,8 +70,9 @@ func (this *service) processor() {
 
 		msg, n, err := this.peekMessageSize()
 		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) processor>>>===>>>message(%s)", this.cid(), msg.Name())
+			return fmt.Sprintf("(%s) processor====>>>>message(%s)", this.cid(), msg.Name())
 		})
+		if err != nil {
 			if err == io.EOF {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
