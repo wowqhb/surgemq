@@ -404,7 +404,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	p_ := make([]byte, 0, len(p))
-	p_ = append(p_, p[0:])
+	p_ = append(p_, p[0:]...)
 	this.buf[int64(start)&this.mask] = &p_
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
