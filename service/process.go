@@ -46,7 +46,7 @@ func (this *service) processor() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
 			Log.Errorc(func() string {
-				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+				return fmt.Sprintf("(%s) Rrocessoring from panic: %v", this.cid(), r)
 			})
 		}
 
