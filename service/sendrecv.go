@@ -184,7 +184,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		return nil, 0, err
 	}
 
-
 	// Peek cnt bytes from the input buffer.
 	b, err = this.in.ReadWait(cnt)
 	if err != nil {
@@ -193,7 +192,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-
+	fmt.Println("this.in.readwait=", b)
 	//total := int(remlen) + 1 + m
 	mtype := message.MessageType((b)[0] >> 4)
 
