@@ -195,7 +195,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			//fmt.Println(b)
 			if err != nil {
-				return total, err
+				Log.Errorc(func() string {
+					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
+				})
+				time.Sleep(2 * time.Millisecond)
+				continue
 			}
 			if b[cnt] >= 0x80 {
 				cnt++
@@ -218,7 +222,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			if err != nil {
 				Log.Errorc(func() string {
-					return fmt.Sprintf("从conn读取数据失败(%s)", err)
+					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
 				})
 				time.Sleep(2 * time.Millisecond)
 				continue
