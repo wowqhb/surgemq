@@ -162,98 +162,99 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer this.Close()
 	total := int64(0)
 	cnt_ := 32 //每次从conn中读取数据的字节数
-	for {
-		if this.isDone() {
-			fmt.Println("ReadFrom isDone!")
-			return total, io.EOF
-		}
+	if this.isDone() {
+		fmt.Println("ReadFrom isDone!")
+		return total, io.EOF
+	}
 
-		b := make([]byte, int64(5))
-		n, err := r.Read(b[0:1])
-		if n > 0 {
-			total += int64(n)
-			if err != nil {
-				return total, err
-			}
-		}
-
-		start, _, err := this.waitForWriteSpace(1 /*this.readblocksize*/)
-		if err != nil {
-			return int64(0), err
-		}
-
-		cnt := 1
-
-		// Let's read enough bytes to get the message header (msg type, remaining length)
-		for {
-			// If we have read 5 bytes and still not done, then there's a problem.
-			if cnt > 4 {
-				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-			}
-			_, err := r.Read(b[cnt:(cnt + 1)])
-
-			//fmt.Println(b)
-			if err != nil {
-				return total, err
-			}
-			if b[cnt] >= 0x80 {
-				cnt++
-			} else {
-				break
-			}
-		}
-		remlen, m := binary.Uvarint(b[1:])
-		remlen_64 := int64(remlen)
-		total = remlen_64 + int64(1) + int64(m)
-		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1+m]...)
-		nlen := int64(0)
-
-		pstart := start & this.mask
-		max_times := 655365 / cnt_
-		for nlen < remlen_64 {
-			if this.isDone() {
-				return total, io.EOF
-			}
-			tmpBytes := make([]byte, cnt_)
-			n, err := r.Read(tmpBytes)
-
-			if err != nil {
-				if err == io.EOF {
-					time.Sleep(2 * time.Millisecond)
-					max_times--
-					if max_times < 0 {
-						return total, errors.New("从conn中读取数据：读取超过最大读取次数")
-					}
-					continue
-				}
-				return total, err
-			}
-
-			if n > 0 {
-				total += int64(n)
-				nlen += int64(n)
-				switch {
-				case n < cnt_:
-					b__ = append(b__, tmpBytes[0:n]...)
-				case n == cnt_:
-					b__ = append(b__, tmpBytes[0:]...)
-				}
-
-			}
-
-		}
-
-		//if this.buf[pstart] != nil {
-		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
-		//}
-		this.buf[pstart] = &b__
-		_, err = this.WriteCommit(int(total) /*n*/)
+	b := make([]byte, int64(5))
+	n, err := r.Read(b[0:1])
+	if n > 0 {
+		total += int64(n)
 		if err != nil {
 			return total, err
 		}
 	}
-	//return total, nil
+
+	start, _, err := this.waitForWriteSpace(1 /*this.readblocksize*/)
+	if err != nil {
+		return int64(0), err
+	}
+
+	cnt := 1
+
+	// Let's read enough bytes to get the message header (msg type, remaining length)
+	for {
+		// If we have read 5 bytes and still not done, then there's a problem.
+		if cnt > 4 {
+			return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+		}
+		_, err := r.Read(b[cnt:(cnt + 1)])
+
+		//fmt.Println(b)
+		if err != nil {
+			return total, err
+		}
+		if b[cnt] >= 0x80 {
+			cnt++
+		} else {
+			break
+		}
+	}
+	remlen, m := binary.Uvarint(b[1:])
+	remlen_64 := int64(remlen)
+	total = remlen_64 + int64(1) + int64(m)
+	b__ := make([]byte, 0, total)
+	b__ = append(b__, b[0:1+m]...)
+	nlen := int64(0)
+
+	pstart := start & this.mask
+	max_times := 655365 / cnt_
+	for nlen < remlen_64 {
+		if this.isDone() {
+			return total, io.EOF
+		}
+		tmpBytes := make([]byte, cnt_)
+		n, err := r.Read(tmpBytes)
+
+		if err != nil {
+			if err == io.EOF {
+				time.Sleep(2 * time.Millisecond)
+				max_times--
+				if max_times < 0 {
+					return total, errors.New("从conn中读取数据：读取超过最大读取次数")
+				}
+				continue
+			}
+			return total, err
+		}
+
+		if n > 0 {
+			total += int64(n)
+			nlen += int64(n)
+			switch {
+			case n < cnt_:
+				b__ = append(b__, tmpBytes[0:n]...)
+			case n == cnt_:
+				b__ = append(b__, tmpBytes[0:]...)
+			}
+
+		}
+
+	}
+
+	//if this.buf[pstart] != nil {
+	//	return total, errors.New("ringbuffer is not nil,it is readonly now")
+	//}
+	this.buf[pstart] = &b__
+	_, err = this.WriteCommit(int(total) /*n*/)
+	if err != nil {
+		return total, err
+	}
+	if err != ErrBufferInsufficientData && err != nil {
+		return total, err
+	}
+	return total, nil
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
@@ -636,6 +637,7 @@ func (this *buffer) waitForWriteSpace(n int) (int64, int, error) {
 		this.pcond.L.Lock()
 		for cpos = this.cseq.get(); wrap > cpos; cpos = this.cseq.get() {
 			if this.isDone() {
+				fmt.Println("waitForWriteSpace io.EOF")
 				return 0, 0, io.EOF
 			}
 
