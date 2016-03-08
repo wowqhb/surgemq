@@ -271,6 +271,12 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 
 		p, err := this.ReadPeek(1 /*this.writeblocksize*/)
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("this.ReadPeek error(%s)", err)
+			})
+			return total, err
+		}
 
 		// There's some data, let's process it first
 		if len(p) > 0 {
