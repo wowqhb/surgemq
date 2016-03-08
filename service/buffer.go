@@ -139,7 +139,7 @@ func (this *buffer) ID() int64 {
 }
 
 func (this *buffer) Close() error {
-	//atomic.StoreInt64(&this.done, 1)
+	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
 	this.pcond.Broadcast()
@@ -176,11 +176,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 	}
 
-	start, _, err := this.waitForWriteSpace(1 /*this.readblocksize*/)
-	if err != nil {
-		return int64(0), err
-	}
-
 	cnt := 1
 
 	// Let's read enough bytes to get the message header (msg type, remaining length)
@@ -208,6 +203,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b__ = append(b__, b[0:1+m]...)
 	nlen := int64(0)
 
+	start, _, err := this.waitForWriteSpace(total /*this.readblocksize*/)
+	if err != nil {
+		return int64(0), err
+	}
 	pstart := start & this.mask
 	max_times := 655365 / cnt_
 	for nlen < remlen_64 {
@@ -544,7 +543,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 // 2. a boolean indicating whether the bytes available wraps around the ring
 // 3. any errors encountered. If there's error then other return values are invalid
 func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
-	start, _, err := this.waitForWriteSpace(1 /*n*/)
+	start, _, err := this.waitForWriteSpace(n /*n*/)
 	if err != nil {
 		return nil, false, err
 	}
@@ -559,7 +558,7 @@ func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
-	start, _, err := this.waitForWriteSpace(1 /*n*/)
+	start, _, err := this.waitForWriteSpace(n /*n*/)
 	if err != nil {
 		return 0, err
 	}
