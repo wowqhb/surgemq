@@ -402,14 +402,14 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	/*total := ringCopy(this.buf, p, int64(start)&this.mask)*/
-	this.buf[int64(start)&this.mask] = &p
-	this.pseq.set(start + int64(1 /*len(p)*/))
+	total := ringCopy(this.buf, p, int64(start)&this.mask)
+	//this.buf[int64(start)&this.mask] = p
+	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
 
-	return len(p) /*total*/, nil
+	return total, nil
 }
 
 // Description below is copied completely from bufio.Peek()
@@ -695,9 +695,9 @@ func ringCopy(dst, src []byte, start int64) int {
 	n := len(src)
 
 	i, l := 0, 0
-
+	tmp := make([]byte, n)
 	for n > 0 {
-		l = copy(dst[start:], src[i:])
+		l = copy(tmp[0:], src[i:])
 		i += l
 		n -= l
 
@@ -705,7 +705,7 @@ func ringCopy(dst, src []byte, start int64) int {
 			start = 0
 		}
 	}
-
+	dst[start] = &tmp
 	return i
 }
 
