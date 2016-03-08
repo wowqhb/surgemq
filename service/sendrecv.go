@@ -86,18 +86,18 @@ func (this *service) receiver() {
 			}*/
 			if err != nil {
 
-				if err == io.EOF {
+				//if err == io.EOF {
 					Log.Errorc(func() string {
 						return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
 					})
 					return
-				} else {
-					Log.Infoc(func() string {
-						return fmt.Sprintf("(%s) info reading from connection: %v", this.cid(), err)
-					})
-				}
-
-				continue
+				//} else {
+				//	Log.Infoc(func() string {
+				//		return fmt.Sprintf("(%s) info reading from connection: %v", this.cid(), err)
+				//	})
+				//}
+				//
+				//continue
 			} else {
 				Log.Infoc(func() string {
 					return fmt.Sprintf("(%s)向ringbuffer些数据成功！", this.cid())
@@ -296,6 +296,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 
 // readMessage() reads and copies a message from the buffer. The buffer bytes are
 // committed as a result of the read.
+/*
 func (this *service) readMessage(mtype message.MessageType, total int) (message.Message, int, error) {
 	var (
 		b   []byte
@@ -314,17 +315,17 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	}
 
 	// Read until we get total bytes
-	l := 0
-	for l < total {
-		n, err = this.in.Read(this.intmp[l:])
-		l += n
-		Log.Debugc(func() string {
-			return fmt.Sprintf("read %d bytes, total %d", n, l)
-		})
-		if err != nil {
-			return nil, 0, err
-		}
+	//l := 0
+	//for l < total {
+	n, err = this.in.Read(this.intmp[0:])
+	//l += n
+	Log.Debugc(func() string {
+		return fmt.Sprintf("read %d bytes", n)
+	})
+	if err != nil {
+		return nil, 0, err
 	}
+	//}
 
 	b = this.intmp[:total]
 
@@ -336,6 +337,7 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	n, err = msg.Decode(b)
 	return msg, n, err
 }
+*/
 
 // writeMessage() writes a message to the outgoing buffer
 func (this *service) writeMessage(msg message.Message) (int, error) {
