@@ -68,9 +68,9 @@ type buffer struct {
 	id int64
 
 	//buf []byte
-	buf [][]byte //环形buffer指针数组
+	buf []*[]byte //环形buffer指针数组
 	//tmp []byte
-	tmp  [][]byte //环形buffer指针数组--临时
+	tmp  []*[]byte //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -119,7 +119,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([][]byte, size),
+		buf:            make([]*[]byte, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -243,7 +243,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 		pstart := start & this.mask
-		this.buf[pstart] = &b__
+		this.buf[pstart] = b__
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
@@ -336,7 +336,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, *(this.buf[cindex]))
+			n := copy(p, this.buf[cindex])
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
@@ -402,7 +402,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	total := ringCopy(this.buf, p, int64(start)&this.mask)
+	total := ringCopy(this.buf[start], p, int64(start)&this.mask)
 	//this.buf[int64(start)&this.mask] = p
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
