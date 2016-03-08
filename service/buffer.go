@@ -292,7 +292,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 
 		// There's some data, let's process it first
 		if len(p) > 0 {
+			fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
 			n, err := w.Write(p)
+			fmt.Println("rererererererererererererererererererererererererererererererererererererererere")
 			total += int64(n)
 			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
 
