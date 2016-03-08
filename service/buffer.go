@@ -445,7 +445,6 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 
 	// m = the number of bytes available. If m is more than what's requested (n),
 	// then we make m = n, basically peek max n bytes
-	err := error(nil)
 
 	// There's data to peek. The size of the data could be <= n.
 	if cpos < ppos {
@@ -464,10 +463,8 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 		} else {
 			return this.buf[cindex : cindex+m], err
 		}*/
-		if this.buf[cindex] != nil {
-			array := this.buf[cindex].bArray
-			return array, err
-		}
+		array := this.buf[cindex].bArray
+		return array, nil
 	}
 
 	return nil, ErrBufferInsufficientData
