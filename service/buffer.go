@@ -187,6 +187,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		// Let's read enough bytes to get the message header (msg type, remaining length)
 		for {
+			fmt.Println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
 			// If we have read 5 bytes and still not done, then there's a problem.
 			if cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
