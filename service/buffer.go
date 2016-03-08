@@ -248,9 +248,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	//}
 	this.buf[pstart] = &b__
 	_, err = this.WriteCommit(int(total) /*n*/)
-	if err != nil {
-		return total, err
-	}
+	//if err != nil {
+	return total, err
+	//}
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
