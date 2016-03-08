@@ -163,6 +163,11 @@ func (this *buffer) Len() int {
 
 func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer func() {
+		if r := recover(); r != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("ReadFrom from panic: %v", r)
+			})
+		}
 		Log.Infoc(func() string {
 			return fmt.Sprintf("ReadFrom::::defer::::close")
 		})
