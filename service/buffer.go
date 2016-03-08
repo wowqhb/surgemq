@@ -25,19 +25,19 @@ import (
 )
 
 var (
-	bufcnt            int64
+	bufcnt int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize  int64
+	DeviceInBufferSize int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize  int64
+	MasterInBufferSize int64
 	MasterOutBufferSize int64
 )
 
 const (
-	smallRWBlockSize      = 512
-	defaultReadBlockSize  = 8192
+	smallRWBlockSize = 512
+	defaultReadBlockSize = 8192
 	defaultWriteBlockSize = 8192
 )
 
@@ -69,25 +69,25 @@ type ByteArray struct {
 }
 
 type buffer struct {
-	id int64
+	id             int64
 
-	//buf []byte
-	buf []*ByteArray //环形buffer指针数组
-	//tmp []byte
-	tmp  []*ByteArray //环形buffer指针数组--临时
-	size int64
-	mask int64
+				    //buf []byte
+	buf            []*ByteArray //环形buffer指针数组
+				    //tmp []byte
+	tmp            []*ByteArray //环形buffer指针数组--临时
+	size           int64
+	mask           int64
 
-	done int64
+	done           int64
 
-	pseq *sequence
-	cseq *sequence
+	pseq           *sequence
+	cseq           *sequence
 
-	pcond *sync.Cond
-	ccond *sync.Cond
+	pcond          *sync.Cond
+	ccond          *sync.Cond
 
-	cwait int64
-	pwait int64
+	cwait          int64
+	pwait          int64
 
 	readblocksize  int
 	writeblocksize int
@@ -208,11 +208,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1 : cnt+1])
+		remlen, m := binary.Uvarint(b[1 : cnt + 1])
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1+m]...)
+		b__ = append(b__, b[0:1 + m]...)
 
 		nlen := int64(0)
 		for nlen < remlen_64 {
@@ -281,9 +281,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			})
 			return total, io.EOF
 		}
-		fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
 		p, err := this.ReadPeek(1)
-		fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("this.ReadPeek error(%s)", err)
@@ -295,7 +293,6 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		if len(p) > 0 {
 
 			n, err := w.Write(p)
-			fmt.Println("rererererererererererererererererererererererererererererererererererererererere")
 			total += int64(n)
 			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
 
@@ -420,7 +417,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	//p_ := make([]byte, 0, len(p))
 	//p_ = append(p_, p[0:]...)
-	this.buf[int64(start)&this.mask] = &ByteArray{bArray: p}
+	this.buf[int64(start) & this.mask] = &ByteArray{bArray: p}
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
@@ -469,17 +466,11 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 
 	// m = the number of bytes available. If m is more than what's requested (n),
 	// then we make m = n, basically peek max n bytes
-	m := ppos - cpos
 	err := error(nil)
 
-	if m >= int64(n) {
-		m = int64(n)
-	} else {
-		err = ErrBufferInsufficientData
-	}
 
 	// There's data to peek. The size of the data could be <= n.
-	if cpos+m <= ppos {
+	if cpos < ppos {
 		cindex := cpos & this.mask
 
 		// If cindex (index relative to buffer) + n is more than buffer size, that means
@@ -496,7 +487,8 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 			return this.buf[cindex : cindex+m], err
 		}*/
 		if this.buf[cindex] != nil {
-			return this.buf[cindex].bArray, err
+			array := this.buf[cindex].bArray
+			return array, err
 		}
 	}
 
@@ -579,7 +571,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos+int64(1) <= ppos {
+	if cpos + int64(1) <= ppos {
 		this.cseq.set(cpos + 1 /*int64(n)*/)
 		//this.buf[cpos] = nil
 		this.pcond.L.Lock()
@@ -729,7 +721,7 @@ func (this *buffer) isDone() bool {
 }*/
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n&(n-1)) == 0
+	return n != 0 && (n & (n - 1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
