@@ -164,7 +164,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	cnt_ := 32 //每次从conn中读取数据的字节数
 	for {
 		Log.Infoc(func() string {
-			return fmt.Sprintf("ReadFrom开始读取",total)
+			return fmt.Sprintf("ReadFrom开始读取", total)
 		})
 		if this.isDone() {
 			fmt.Println("ReadFrom isDone!")
@@ -205,57 +205,52 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
 		b__ = append(b__, b[0:1+m]...)
-		nlen := int64(0)
 
-		start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
-		if err != nil {
-			return int64(0), err
-		}
-		pstart := start & this.mask
-		max_times := 655365 / cnt_
-		for nlen < remlen_64 {
-			if this.isDone() {
-				return total, io.EOF
-			}
-			tmpBytes := make([]byte, cnt_)
-			n, err := r.Read(tmpBytes)
+		nlen := int64(0)
+		for nlen < int64(remlen) {
+			b_ := make([]byte, 64)
+			//b_ := make([]byte, remlen)
+			n, err = r.Read(b_)
 
 			if err != nil {
-				if err == io.EOF {
-					time.Sleep(2 * time.Millisecond)
-					max_times--
-					if max_times < 0 {
-						return total, errors.New("从conn中读取数据：读取超过最大读取次数")
-					}
-					continue
-				}
-				return total, err
+				Log.Errorc(func() string {
+					return fmt.Sprintf("从conn读取数据失败(%s)", err)
+				})
+				time.Sleep(2 * time.Millisecond)
+				continue
+				//return total,err
+			}
+			switch {
+			case n == 0:
+				break
+			case n < 64:
+				b__ = append(b__, b_[0:n]...)
+			default:
+				b__ = append(b__, b_[0:]...)
 			}
 
-			if n > 0 {
-				total += int64(n)
-				nlen += int64(n)
-				switch {
-				case n < cnt_:
-					b__ = append(b__, tmpBytes[0:n]...)
-				case n == cnt_:
-					b__ = append(b__, tmpBytes[0:]...)
-				}
-
-			}
-
+			nlen += int64(n)
+			total += int64(n)
+		}
+		if nlen == int64(0) {
+			return total, err
 		}
 
 		//if this.buf[pstart] != nil {
 		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
 		//}
+		start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
+		if err != nil {
+			return int64(0), err
+		}
+		pstart := start & this.mask
 		this.buf[pstart] = &b__
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
 		}
 		Log.Infoc(func() string {
-			return fmt.Sprintf("ReadFrom读取完成",total)
+			return fmt.Sprintf("ReadFrom读取完成", total)
 		})
 	}
 }
