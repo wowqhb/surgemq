@@ -60,6 +60,7 @@ func (this *service) processor() {
 
 	this.wgStarted.Done()
 
+
 	for {
 		// 1. Find out what message is next and the size of the message
 		//     this.rmu.Lock()
