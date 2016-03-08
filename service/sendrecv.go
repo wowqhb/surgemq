@@ -169,7 +169,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 
 	if this.in == nil {
 		err = ErrBufferNotReady
-		return 0, 0, err
+		return nil, 0, err
 	}
 
 	// Let's read enough bytes to get the message header (msg type, remaining length)
@@ -182,7 +182,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	// Peek cnt bytes from the input buffer.
 	b, err = this.in.ReadWait(cnt)
 	if err != nil {
-		return 0, 0, err
+		return nil, 0, err
 	}
 
 	//// If not enough bytes are returned, then continue until there's enough.
