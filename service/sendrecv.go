@@ -231,7 +231,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 	//total := int(remlen) + 1 + m
 
-	mtype := message.MessageType(b[0] >> 4)
+	mtype := message.MessageType(*b[0] >> 4)
 
 	//return mtype, total, err
 	var msg message.Message
@@ -245,7 +245,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
 	})
-	_, err = msg.Decode(b)
+	_, err = msg.Decode(*b)
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure", this.cid())
@@ -255,7 +255,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
 	})
-	return msg, len(b), err
+	return msg, len(*b), err
 }
 
 // peekMessage() reads a message from the buffer, but the bytes are NOT committed.
@@ -387,7 +387,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 			return m, err
 		}
 	} else {
-		n, err = msg.Encode(buf[0:])
+		n, err = msg.Encode(*buf[0:])
 		if err != nil {
 			return 0, err
 		}
