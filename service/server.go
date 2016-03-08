@@ -273,7 +273,7 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 // Close terminates the server by shutting down all the client connections and closing
 // the listener. It will, as best it can, clean up after itself.
 func (this *Server) Close() error {
-	return
+	return nil
 	// By closing the quit channel, we are telling the server to stop accepting new
 	// connection.
 	close(this.quit)
