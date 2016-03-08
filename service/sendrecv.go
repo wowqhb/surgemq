@@ -46,12 +46,16 @@ func (this *service) receiver() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+			})
 		}
 
 		this.wgStopped.Done()
 
-		Log.Debugc(func() string { return fmt.Sprintf("(%s) Stopping receiver", this.cid()) })
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) Stopping receiver", this.cid())
+		})
 	}()
 
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting receiver", this.cid())})
@@ -103,7 +107,9 @@ func (this *service) receiver() {
 	//	Log.Errorc(func() string{ return fmt.Sprintf("(%s) Websocket: %v", this.cid(), ErrInvalidConnectionType)})
 
 	default:
-		Log.Errorc(func() string { return fmt.Sprintf("(%s) %v", this.cid(), ErrInvalidConnectionType) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) %v", this.cid(), ErrInvalidConnectionType)
+		})
 	}
 }
 
@@ -112,12 +118,16 @@ func (this *service) sender() {
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
+			})
 		}
 
 		this.wgStopped.Done()
 
-		Log.Debugc(func() string { return fmt.Sprintf("(%s) Stopping sender", this.cid()) })
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) Stopping sender", this.cid())
+		})
 	}()
 
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting sender", this.cid())})
@@ -131,7 +141,9 @@ func (this *service) sender() {
 
 			if err != nil {
 				if err != io.EOF {
-					Log.Errorc(func() string { return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err) })
+					Log.Errorc(func() string {
+						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
+					})
 				}
 				return
 			}
@@ -141,7 +153,9 @@ func (this *service) sender() {
 	//	Log.Errorc(func() string{ return fmt.Sprintf("(%s) Websocket not supported", this.cid())})
 
 	default:
-		Log.Errorc(func() string { return fmt.Sprintf("(%s) Invalid connection type", this.cid()) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) Invalid connection type", this.cid())
+		})
 	}
 }
 
@@ -160,34 +174,45 @@ func (this *service) peekMessageSize() (message.MessageType, int, error) {
 	}
 
 	// Let's read enough bytes to get the message header (msg type, remaining length)
+	//for {
+	// If we have read 5 bytes and still not done, then there's a problem.
+	//if cnt > 5 {
+	//	return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+	//}
+
+	// Peek cnt bytes from the input buffer.
+	b, err = this.in.ReadWait(cnt)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	//// If not enough bytes are returned, then continue until there's enough.
+	//if len(b) < cnt {
+	//	continue
+	//}
+
+	// If we got enough bytes, then check the last byte to see if the continuation
+	// bit is set. If so, increment cnt and continue peeking
+	/*if b[cnt-1] >= 0x80 {
+		cnt++
+	} else {
+		break
+	}*/
 	for {
-		// If we have read 5 bytes and still not done, then there's a problem.
 		if cnt > 5 {
 			return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 		}
 
-		// Peek cnt bytes from the input buffer.
-		b, err = this.in.ReadWait(cnt)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		// If not enough bytes are returned, then continue until there's enough.
-		if len(b) < cnt {
-			continue
-		}
-
-		// If we got enough bytes, then check the last byte to see if the continuation
-		// bit is set. If so, increment cnt and continue peeking
 		if b[cnt-1] >= 0x80 {
 			cnt++
 		} else {
 			break
 		}
 	}
+	//}
 
 	// Get the remaining length of the message
-	remlen, m := binary.Uvarint(b[1:])
+	remlen, m := binary.Uvarint(b[1:cnt])
 
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 	total := int(remlen) + 1 + m
@@ -258,7 +283,9 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 	for l < total {
 		n, err = this.in.Read(this.intmp[l:])
 		l += n
-		Log.Debugc(func() string { return fmt.Sprintf("read %d bytes, total %d", n, l) })
+		Log.Debugc(func() string {
+			return fmt.Sprintf("read %d bytes, total %d", n, l)
+		})
 		if err != nil {
 			return nil, 0, err
 		}
