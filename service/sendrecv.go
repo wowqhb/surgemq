@@ -142,8 +142,8 @@ func (this *service) sender() {
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {
-			fmt.Println("this.in=", this.in)
-			fmt.Println("this.out=", this.out)
+			fmt.Println("this.in.buf=", this.in.buf)
+			fmt.Println("this.out.buf=", this.out.buf)
 			_, err := this.out.WriteTo(conn)
 
 			if err != nil {
