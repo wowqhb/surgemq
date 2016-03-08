@@ -281,8 +281,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			})
 			return total, io.EOF
 		}
-
-		p, err := this.ReadPeek(1 /*this.writeblocksize*/)
+		fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
+		p, err := this.ReadPeek(1)
+		fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("this.ReadPeek error(%s)", err)
@@ -292,7 +293,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 
 		// There's some data, let's process it first
 		if len(p) > 0 {
-			fmt.Println("totototototototototototototototototototototototototototototototototototototototo")
+
 			n, err := w.Write(p)
 			fmt.Println("rererererererererererererererererererererererererererererererererererererererere")
 			total += int64(n)
