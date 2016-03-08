@@ -173,21 +173,34 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
 		}
-
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取1", total)
+		})
 		b := make([]byte, int64(5))
 		n, err := r.Read(b[0:1])
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取2", total)
+		})
 		if err != nil {
 			return total, err
 			//time.Sleep(2 * time.Millisecond)
 			//continue
 		}
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取3", total)
+		})
 		if n > 0 {
 			total += int64(n)
 		}
 		cnt := 1
-
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取4", total)
+		})
 		// Let's read enough bytes to get the message header (msg type, remaining length)
 		for {
+			Log.Infoc(func() string {
+				return fmt.Sprintf("ReadFrom开始读取5", total)
+			})
 			// If we have read 5 bytes and still not done, then there's a problem.
 			if cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
@@ -208,14 +221,25 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取6", total)
+		})
 		remlen, m := binary.Uvarint(b[1 : cnt+1])
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取7", total)
+		})
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
 		b__ = append(b__, b[0:1+m]...)
-
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取8", total)
+		})
 		nlen := int64(0)
 		for nlen < remlen_64 {
+			Log.Infoc(func() string {
+				return fmt.Sprintf("ReadFrom开始读取9", total)
+			})
 			b_ := make([]byte, cnt_)
 			//b_ := make([]byte, remlen)
 			n, err = r.Read(b_)
@@ -240,6 +264,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			nlen += int64(n)
 			total += int64(n)
 		}
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取10", total)
+		})
 		if nlen == int64(0) {
 			return total, err
 		}
@@ -251,10 +278,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if err != nil {
 			return total, err
 		}
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取11", total)
+		})
 		pstart := start & this.mask
 
 		this.buf[pstart] = &ByteArray{bArray: b__}
 		_, err = this.WriteCommit(int(total) /*n*/)
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom开始读取12", total)
+		})
 		if err != nil {
 			return total, err
 		}
