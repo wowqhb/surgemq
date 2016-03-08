@@ -68,9 +68,9 @@ type buffer struct {
 	id int64
 
 	//buf []byte
-	buf []*[]byte //环形buffer指针数组
+	buf [][]byte //环形buffer指针数组
 	//tmp []byte
-	tmp  []*[]byte //环形buffer指针数组--临时
+	tmp  [][]byte //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -119,7 +119,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([]*[]byte, size),
+		buf:            make([][]byte, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -243,7 +243,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 		pstart := start & this.mask
-		this.buf[pstart] = &b__
+		this.buf[pstart] = b__
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
@@ -336,7 +336,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, *(this.buf[cindex]))
+			n := copy(p, this.buf[cindex])
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
@@ -405,7 +405,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	//p_ := make([]byte, 0, len(p))
 	//p_ = append(p_, p[0:]...)
-	this.buf[int64(start)&this.mask] = &p
+	this.buf[int64(start)&this.mask] = p
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
@@ -481,7 +481,7 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 			return this.buf[cindex : cindex+m], err
 		}*/
 		if this.buf[cindex] != nil {
-			return *(this.buf[cindex]), err
+			return this.buf[cindex], err
 		}
 	}
 
@@ -538,7 +538,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 	Log.Debugc(func() string {
 		return fmt.Sprintf("ReadWait {{%s}}", this.buf[cindex])
 	})
-	return *(this.buf[cindex]), nil
+	return this.buf[cindex], nil
 }
 
 // Commit moves the cursor forward by n bytes. It behaves like Read() except it doesn't
@@ -593,7 +593,7 @@ func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
 	}
 
 	return this.buf[pstart : pstart+int64(cnt)], false, nil*/
-	return *(this.buf[pstart]), false, nil
+	return this.buf[pstart], false, nil
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
