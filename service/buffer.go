@@ -17,7 +17,6 @@ package service
 import (
 	"bufio"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"sync"
