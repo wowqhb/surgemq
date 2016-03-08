@@ -251,10 +251,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	if err != nil {
 		return total, err
 	}
-	if err != ErrBufferInsufficientData && err != nil {
-		return total, err
-	}
-	return total, nil
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
@@ -637,7 +633,6 @@ func (this *buffer) waitForWriteSpace(n int) (int64, int, error) {
 		this.pcond.L.Lock()
 		for cpos = this.cseq.get(); wrap > cpos; cpos = this.cseq.get() {
 			if this.isDone() {
-				fmt.Println("waitForWriteSpace io.EOF")
 				return 0, 0, io.EOF
 			}
 
