@@ -275,7 +275,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				return total, err
 			}
 
-			_, err = this.ReadCommit(1 /*n*/)
+			_, err = this.ReadCommit(n /*n*/)
 			if err != nil {
 				return total, err
 			}
@@ -528,8 +528,8 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos+int64(n) <= ppos {
-		this.cseq.set(cpos + int64(n))
+	if cpos+1 /*int64(n)*/ <= ppos {
+		this.cseq.set(cpos + 1 /*int64(n)*/)
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
