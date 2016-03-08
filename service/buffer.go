@@ -403,9 +403,9 @@ func (this *buffer) Write(p []byte) (int, error) {
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
-	p_ := make([]byte, 0, len(p))
-	p_ = append(p_, p[0:]...)
-	this.buf[int64(start)&this.mask] = &p_
+	//p_ := make([]byte, 0, len(p))
+	//p_ = append(p_, p[0:]...)
+	this.buf[int64(start)&this.mask] = &p
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()

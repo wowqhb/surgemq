@@ -199,7 +199,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-
+	fmt.Println("b=", b)
 	//// If not enough bytes are returned, then continue until there's enough.
 	//if len(b) < cnt {
 	//	continue
