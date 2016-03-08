@@ -68,9 +68,9 @@ type buffer struct {
 	id int64
 
 	//buf []byte
-	buf [][]byte //环形buffer指针数组
+	buf []*([]byte) //环形buffer指针数组
 	//tmp []byte
-	tmp  [][]byte //环形buffer指针数组--临时
+	tmp  []*([]byte) //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -119,7 +119,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([][]byte, size),
+		buf:            make([]*([]byte), size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -243,7 +243,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 		pstart := start & this.mask
-		this.buf[pstart] = b__
+		this.buf[pstart] = b__[0:]
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
@@ -337,7 +337,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, this.buf[cindex])
+			n := copy(p, this.buf[cindex][0:])
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
