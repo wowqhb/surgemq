@@ -248,7 +248,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
 		//}
 		this.buf[pstart] = &b__
-		_, err = this.WriteCommit(total /*n*/)
+		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
 		}
