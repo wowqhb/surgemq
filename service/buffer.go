@@ -251,6 +251,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		Log.Infoc(func() string {
 			return fmt.Sprintf("ReadFrom读取完成", total)
 		})
+		fmt.Println(this.buf)
 	}
 }
 
