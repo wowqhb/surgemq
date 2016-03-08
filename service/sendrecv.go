@@ -244,6 +244,12 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	}
 
 	_, err = msg.Decode(b)
+	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure", this.cid())
+		})
+		return nil, 0, err
+	}
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
 	})
