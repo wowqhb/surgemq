@@ -142,6 +142,7 @@ func (this *service) sender() {
 	switch conn := this.conn.(type) {
 	case net.Conn:
 		for {
+			fmt.Println("this.out=", this.out)
 			_, err := this.out.WriteTo(conn)
 
 			if err != nil {
@@ -199,7 +200,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-	fmt.Println("b=", b)
+	//fmt.Println("b=", b)
 	//// If not enough bytes are returned, then continue until there's enough.
 	//if len(b) < cnt {
 	//	continue
