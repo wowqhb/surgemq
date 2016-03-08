@@ -194,6 +194,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	// Peek cnt bytes from the input buffer.
 	b, err = this.in.ReadWait(cnt)
 	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure", this.cid())
+		})
 		return nil, 0, err
 	}
 
@@ -234,6 +237,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	var msg message.Message
 	msg, err = mtype.New()
 	if err != nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) peekMessageSize mtype.New() falure", this.cid())
+		})
 		return nil, 0, err
 	}
 
