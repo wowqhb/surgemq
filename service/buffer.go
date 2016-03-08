@@ -705,7 +705,7 @@ func ringCopy(dst, src []byte, start int64) int {
 			start = 0
 		}
 	}
-	dst[start] = &tmp
+	dst[start] = tmp
 	return i
 }
 
