@@ -94,7 +94,7 @@ func (this *service) receiver() {
 				continue
 			} else {
 				Log.Infoc(func() string {
-					return fmt.Sprintf("向ringbuffer些数据成功！")
+					return fmt.Sprintf("(%s)向ringbuffer些数据成功！", this.cid())
 				})
 			}
 		}
