@@ -176,6 +176,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		b := make([]byte, int64(5))
 		n, err := r.Read(b[0:1])
+		fmt.Println("sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
 		if n > 0 {
 			total += int64(n)
 			if err != nil {
@@ -238,7 +239,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if nlen == int64(0) {
 			return total, err
 		}
-		fmt.Println("sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
+
 		//if this.buf[pstart] != nil {
 		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
 		//}
