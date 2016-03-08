@@ -213,7 +213,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if this.isDone() {
 			return total, io.EOF
 		}
-		tmpBytes := make([]byte, cnt_)
+		tmpBytes := make([]byte, 0, cnt_)
 		n, err := r.Read(tmpBytes)
 
 		if err != nil {
