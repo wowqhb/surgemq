@@ -163,6 +163,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 	cnt_ := 32 //每次从conn中读取数据的字节数
 	if this.isDone() {
+		fmt.Println("ReadFrom isDone!")
 		return total, io.EOF
 	}
 
