@@ -68,9 +68,9 @@ type buffer struct {
 	id int64
 
 	//buf []byte
-	buf []*[]byte //环形buffer指针数组
+	buf [][]byte //环形buffer指针数组
 	//tmp []byte
-	tmp  []*[]byte //环形buffer指针数组--临时
+	tmp  [][]byte //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -119,7 +119,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([]*[]byte, size),
+		buf:            make([][]byte, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -479,7 +479,7 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 			return this.buf[cindex : cindex+m], err
 		}*/
 		if this.buf[cindex] != nil {
-			return *(this.buf[cindex]), err
+			return this.buf[cindex], err
 		}
 	}
 
@@ -705,7 +705,7 @@ func ringCopy(dst, src []byte, start int64) int {
 			start = 0
 		}
 	}
-	dst[start] = tmp
+	dst[start] = &tmp
 	return i
 }
 
