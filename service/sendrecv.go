@@ -192,10 +192,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-	fmt.Println("this.in.readwait=", b)
 	//total := int(remlen) + 1 + m
 	mtype := message.MessageType((b)[0] >> 4)
-
+	fmt.Println("this.in.readwait=", mtype)
 	//return mtype, total, err
 	var msg message.Message
 	msg, err = mtype.New()
