@@ -69,7 +69,7 @@ func (this *service) processor() {
 
 		msg, n, err := this.peekMessageSize()
 		Log.Infoc(func() string {
-			return fmt.Sprintf("(%s) processor处理message(%s)", this.cid(), msg.Name())
+			return fmt.Sprintf("(%s) processor===>>>message(%s)", this.cid(), msg.Name())
 		})
 		if err != nil {
 			if err == io.EOF {
