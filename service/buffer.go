@@ -203,7 +203,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	b__ = append(b__, b[0:1+m]...)
 	nlen := int64(0)
 
-	start, _, err := this.waitForWriteSpace(total /*this.readblocksize*/)
+	start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
 	if err != nil {
 		return int64(0), err
 	}
