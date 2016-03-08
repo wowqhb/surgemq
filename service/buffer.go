@@ -249,6 +249,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	if err != nil {
 		return total, err
 	}
+	return total, nil
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
@@ -309,7 +310,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, this.buf[cindex])
+			n := copy(p, *(this.buf[cindex]))
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
@@ -375,14 +376,14 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	total := ringCopy(this.buf, p, int64(start)&this.mask)
-
-	this.pseq.set(start + int64(len(p)))
+	/*total := ringCopy(this.buf, p, int64(start)&this.mask)*/
+	this.buf[int64(start)&this.mask] = &p
+	this.pseq.set(start + int64(1 /*len(p)*/))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
 
-	return total, nil
+	return len(p) /*total*/, nil
 }
 
 // Description below is copied completely from bufio.Peek()
@@ -446,7 +447,7 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 			return this.buf[cindex : cindex+m], err
 		}*/
 		if this.buf[cindex] != nil {
-			return this.buf[cindex], err
+			return *(this.buf[cindex]), err
 		}
 	}
 
@@ -488,7 +489,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 
 	// If cindex (index relative to buffer) + n is more than buffer size, that means
 	// the data wrapped
-	if cindex+int64(n) > this.size {
+	/*if cindex+int64(n) > this.size {
 		// reset the tmp buffer
 		this.tmp = this.tmp[0:0]
 
@@ -496,9 +497,9 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 		this.tmp = append(this.tmp, this.buf[cindex:]...)
 		this.tmp = append(this.tmp, this.buf[0:n-l]...)
 		return this.tmp[:n], nil
-	}
+	}*/
 
-	return this.buf[cindex : cindex+int64(n)], nil
+	return *(this.buf[cindex /* : cindex+int64(n)*/]), nil
 }
 
 // Commit moves the cursor forward by n bytes. It behaves like Read() except it doesn't
@@ -553,7 +554,7 @@ func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
 	}
 
 	return this.buf[pstart : pstart+int64(cnt)], false, nil*/
-	return this.buf[pstart], false, nil
+	return *(this.buf[pstart]), false, nil
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
