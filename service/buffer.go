@@ -162,94 +162,97 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer this.Close()
 	total := int64(0)
 	cnt_ := 32 //每次从conn中读取数据的字节数
-	if this.isDone() {
-		fmt.Println("ReadFrom isDone!")
-		return total, io.EOF
-	}
-
-	b := make([]byte, int64(5))
-	n, err := r.Read(b[0:1])
-	if n > 0 {
-		total += int64(n)
-		if err != nil {
-			return total, err
-		}
-	}
-
-	cnt := 1
-
-	// Let's read enough bytes to get the message header (msg type, remaining length)
 	for {
-		// If we have read 5 bytes and still not done, then there's a problem.
-		if cnt > 4 {
-			return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-		}
-		_, err := r.Read(b[cnt:(cnt + 1)])
 
-		//fmt.Println(b)
-		if err != nil {
-			return total, err
-		}
-		if b[cnt] >= 0x80 {
-			cnt++
-		} else {
-			break
-		}
-	}
-	remlen, m := binary.Uvarint(b[1:])
-	remlen_64 := int64(remlen)
-	total = remlen_64 + int64(1) + int64(m)
-	b__ := make([]byte, 0, total)
-	b__ = append(b__, b[0:1+m]...)
-	nlen := int64(0)
-
-	start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
-	if err != nil {
-		return int64(0), err
-	}
-	pstart := start & this.mask
-	max_times := 655365 / cnt_
-	for nlen < remlen_64 {
 		if this.isDone() {
+			fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
 		}
-		tmpBytes := make([]byte, cnt_)
-		n, err := r.Read(tmpBytes)
 
-		if err != nil {
-			if err == io.EOF {
-				time.Sleep(2 * time.Millisecond)
-				max_times--
-				if max_times < 0 {
-					return total, errors.New("从conn中读取数据：读取超过最大读取次数")
-				}
-				continue
-			}
-			return total, err
-		}
-
+		b := make([]byte, int64(5))
+		n, err := r.Read(b[0:1])
 		if n > 0 {
 			total += int64(n)
-			nlen += int64(n)
-			switch {
-			case n < cnt_:
-				b__ = append(b__, tmpBytes[0:n]...)
-			case n == cnt_:
-				b__ = append(b__, tmpBytes[0:]...)
+			if err != nil {
+				return total, err
+			}
+		}
+
+		cnt := 1
+
+		// Let's read enough bytes to get the message header (msg type, remaining length)
+		for {
+			// If we have read 5 bytes and still not done, then there's a problem.
+			if cnt > 4 {
+				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+			}
+			_, err := r.Read(b[cnt:(cnt + 1)])
+
+			//fmt.Println(b)
+			if err != nil {
+				return total, err
+			}
+			if b[cnt] >= 0x80 {
+				cnt++
+			} else {
+				break
+			}
+		}
+		remlen, m := binary.Uvarint(b[1:])
+		remlen_64 := int64(remlen)
+		total = remlen_64 + int64(1) + int64(m)
+		b__ := make([]byte, 0, total)
+		b__ = append(b__, b[0:1+m]...)
+		nlen := int64(0)
+
+		start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
+		if err != nil {
+			return int64(0), err
+		}
+		pstart := start & this.mask
+		max_times := 655365 / cnt_
+		for nlen < remlen_64 {
+			if this.isDone() {
+				return total, io.EOF
+			}
+			tmpBytes := make([]byte, cnt_)
+			n, err := r.Read(tmpBytes)
+
+			if err != nil {
+				if err == io.EOF {
+					time.Sleep(2 * time.Millisecond)
+					max_times--
+					if max_times < 0 {
+						return total, errors.New("从conn中读取数据：读取超过最大读取次数")
+					}
+					continue
+				}
+				return total, err
+			}
+
+			if n > 0 {
+				total += int64(n)
+				nlen += int64(n)
+				switch {
+				case n < cnt_:
+					b__ = append(b__, tmpBytes[0:n]...)
+				case n == cnt_:
+					b__ = append(b__, tmpBytes[0:]...)
+				}
+
 			}
 
 		}
 
+		//if this.buf[pstart] != nil {
+		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
+		//}
+		this.buf[pstart] = b__
+		_, err = this.WriteCommit(int(total) /*n*/)
+		if err != nil {
+			return total, err
+		}
 	}
-
-	//if this.buf[pstart] != nil {
-	//	return total, errors.New("ringbuffer is not nil,it is readonly now")
-	//}
-	this.buf[pstart] = &b__
-	_, err = this.WriteCommit(int(total) /*n*/)
-	//if err != nil {
-	return total, err
-	//}
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
@@ -527,7 +530,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos+1 /*int64(n)*/ <= ppos {
+	if cpos+int64(1) <= ppos {
 		this.cseq.set(cpos + 1 /*int64(n)*/)
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
