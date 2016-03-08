@@ -177,6 +177,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	)
 
 	if this.in == nil {
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) peekMessageSize this.in is nil", this.cid())
+		})
 		err = ErrBufferNotReady
 		return nil, 0, err
 	}
