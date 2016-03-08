@@ -171,7 +171,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		return fmt.Sprintf("(%s) peekMessageSize开始", this.cid())
 	})
 	var (
-		b   []byte
+		b   *[]byte
 		err error
 		cnt int = 2
 	)
@@ -344,7 +344,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 		l    int = msg.Len()
 		m, n int
 		err  error
-		buf  []byte
+		buf  *[]byte
 		wrap bool
 	)
 
