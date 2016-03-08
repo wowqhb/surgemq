@@ -161,7 +161,7 @@ func (this *buffer) Len() int {
 func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer this.Close()
 	total := int64(0)
-	cnt_ := 1 //每次从conn中读取数据的字节数
+	cnt_ := 32 //每次从conn中读取数据的字节数
 	if this.isDone() {
 		fmt.Println("ReadFrom isDone!")
 		return total, io.EOF

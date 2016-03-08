@@ -81,7 +81,7 @@ func (this *service) receiver() {
 			if err != nil {
 
 				if err == io.EOF {
-					Log.Infoc(func() string {
+					Log.Errorc(func() string {
 						return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
 					})
 					return
