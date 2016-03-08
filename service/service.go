@@ -38,7 +38,8 @@ type stat struct {
 }
 
 func (this *stat) increment(n int64) {
-	atomic.AddInt64(&this.bytes, n)
+	//atomic.AddInt64(&this.bytes, n)
+	atomic.AddInt64(&this.bytes, 1)
 	atomic.AddInt64(&this.msgs, 1)
 }
 
