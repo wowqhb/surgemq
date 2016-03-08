@@ -224,7 +224,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			tmpm := remlen_64 - nlen
 
 			var b_ []byte
-			if tmpm < cnt_ {
+			if tmpm < int64(cnt_) {
 				b_ = make([]byte, tmpm)
 			} else {
 				b_ = make([]byte, cnt_)
