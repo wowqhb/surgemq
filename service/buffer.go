@@ -199,7 +199,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1:])
+		remlen, m := binary.Uvarint(b[1 : cnt+1])
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
@@ -506,7 +506,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 
 	// This is the magic read-to position. The producer position must be equal or
 	// greater than the next position we read to.
-	next := cpos + int64(1/*n*/)
+	next := cpos + int64(1 /*n*/)
 
 	// If there's no data, then let's wait until there is some data
 	this.ccond.L.Lock()
