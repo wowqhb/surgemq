@@ -64,13 +64,17 @@ func (this *sequence) set(seq int64) {
 	atomic.StoreInt64(&this.cursor, seq)
 }
 
+type ByteArray struct {
+	bArray []byte
+}
+
 type buffer struct {
 	id int64
 
 	//buf []byte
-	buf []*([]byte) //环形buffer指针数组
+	buf []*ByteArray //环形buffer指针数组
 	//tmp []byte
-	tmp  []*([]byte) //环形buffer指针数组--临时
+	tmp  []*ByteArray //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -119,7 +123,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([]*([]byte), size),
+		buf:            make([]*ByteArray, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -243,7 +247,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 		pstart := start & this.mask
-		this.buf[pstart] = &b__
+
+		this.buf[pstart] = &ByteArray{bArray: b__}
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
@@ -337,7 +342,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, *(this.buf[cindex]))
+			n := copy(p, this.buf[cindex].bArray)
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
@@ -406,7 +411,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	//p_ := make([]byte, 0, len(p))
 	//p_ = append(p_, p[0:]...)
-	this.buf[int64(start)&this.mask] = &p
+	this.buf[int64(start)&this.mask] = &ByteArray{bArray: p}
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
@@ -423,7 +428,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 // b's buffer size.
 // If there's not enough data to peek, error is ErrBufferInsufficientData.
 // If n < 0, error is bufio.ErrNegativeCount
-func (this *buffer) ReadPeek(n int) (*[]byte, error) {
+func (this *buffer) ReadPeek(n int) ([]byte, error) {
 	defer Log.Debugc(func() string {
 		return fmt.Sprintf("ReadPeek 结束")
 	})
@@ -482,7 +487,7 @@ func (this *buffer) ReadPeek(n int) (*[]byte, error) {
 			return this.buf[cindex : cindex+m], err
 		}*/
 		if this.buf[cindex] != nil {
-			return this.buf[cindex], err
+			return this.buf[cindex].bArray, err
 		}
 	}
 
@@ -492,7 +497,7 @@ func (this *buffer) ReadPeek(n int) (*[]byte, error) {
 // Wait waits for for n bytes to be ready. If there's not enough data, then it will
 // wait until there's enough. This differs from ReadPeek or Readin that Peek will
 // return whatever is available and won't wait for full count.
-func (this *buffer) ReadWait(n int) (*[]byte, error) {
+func (this *buffer) ReadWait(n int) ([]byte, error) {
 	Log.Debugc(func() string {
 		return fmt.Sprintf("ReadWait 开始执行")
 	})
@@ -539,7 +544,7 @@ func (this *buffer) ReadWait(n int) (*[]byte, error) {
 	Log.Debugc(func() string {
 		return fmt.Sprintf("ReadWait {{%s}}", this.buf[cindex])
 	})
-	return this.buf[cindex], nil
+	return this.buf[cindex].bArray, nil
 }
 
 // Commit moves the cursor forward by n bytes. It behaves like Read() except it doesn't
@@ -573,9 +578,6 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
-		this.ccond.L.Lock()
-		this.ccond.Broadcast()
-		this.ccond.L.Unlock()
 		return n, nil
 	}
 
@@ -586,7 +588,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 // 1. the slice pointing to the location in the buffer to be filled
 // 2. a boolean indicating whether the bytes available wraps around the ring
 // 3. any errors encountered. If there's error then other return values are invalid
-func (this *buffer) WriteWait(n int) (*[]byte, bool, error) {
+func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
 	start, _, err := this.waitForWriteSpace(n /*n*/)
 	if err != nil {
 		return nil, false, err
@@ -598,7 +600,7 @@ func (this *buffer) WriteWait(n int) (*[]byte, bool, error) {
 	}
 
 	return this.buf[pstart : pstart+int64(cnt)], false, nil*/
-	return this.buf[pstart], false, nil
+	return this.buf[pstart].bArray, false, nil
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
