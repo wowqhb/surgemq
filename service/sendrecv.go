@@ -242,7 +242,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-
+	Log.Infoc(func() string {
+		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
+	})
 	_, err = msg.Decode(b)
 	if err != nil {
 		Log.Errorc(func() string {
