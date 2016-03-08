@@ -142,7 +142,7 @@ func (this *buffer) ID() int64 {
 }
 
 func (this *buffer) Close() error {
-	atomic.StoreInt64(&this.done, 1)
+	//atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
 	this.pcond.Broadcast()
@@ -177,19 +177,17 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		b := make([]byte, int64(5))
 		n, err := r.Read(b[0:1])
 		if err != nil {
-			//return total, err
-			time.Sleep(2 * time.Millisecond)
-			continue
+			return total, err
+			//time.Sleep(2 * time.Millisecond)
+			//continue
 		}
 		if n > 0 {
 			total += int64(n)
 		}
-		fmt.Println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV")
 		cnt := 1
 
 		// Let's read enough bytes to get the message header (msg type, remaining length)
 		for {
-			fmt.Println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
 			// If we have read 5 bytes and still not done, then there's a problem.
 			if cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
@@ -210,7 +208,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
-		fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 		remlen, m := binary.Uvarint(b[1 : cnt+1])
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
