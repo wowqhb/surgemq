@@ -51,11 +51,11 @@ func (this *service) processor() {
 		}
 
 		this.wgStopped.Done()
-		this.stop()
-
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) Stopping processor", this.cid())
-		})
+		//this.stop()
+		//
+		//Log.Debugc(func() string {
+		//	return fmt.Sprintf("(%s) Stopping processor", this.cid())
+		//})
 	}()
 
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting processor", this.cid())})
