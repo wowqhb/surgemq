@@ -142,7 +142,7 @@ func (this *buffer) ID() int64 {
 }
 
 func (this *buffer) Close() error {
-	//atomic.StoreInt64(&this.done, 1)
+	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
 	this.pcond.Broadcast()
