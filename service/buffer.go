@@ -219,6 +219,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if err != nil {
 			if err == io.EOF {
 				time.Sleep(2 * time.Millisecond)
+				max_times--
+				if max_times < 0 {
+					return total, errors.New("从conn中读取数据：读取超过最大读取次数")
+				}
 				continue
 			}
 			return total, err
@@ -235,10 +239,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 
 		}
-		max_times--
-		if max_times < 0 {
-			return total, errors.New("从conn中读取数据：读取超过最大读取次数")
-		}
+
 	}
 
 	//if this.buf[pstart] != nil {
