@@ -182,7 +182,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if n > 0 {
 			total += int64(n)
 		}
-
+		fmt.Println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV")
 		cnt := 1
 
 		// Let's read enough bytes to get the message header (msg type, remaining length)
