@@ -72,11 +72,28 @@ func (this *service) receiver() {
 			//       Log.Errorc(func() string{ return fmt.Sprintf("this.sess is: %v", this.sess)})
 			//       Log.Errorc(func() string{ return fmt.Sprintf("this.sessMgr is: %v", this.sessMgr)})
 
-			if err != nil {
+			/*if err != nil {
 				Log.Infoc(func() string { return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err) })
 				//         if err != io.EOF {
 				//         }
 				return
+			}*/
+			if err != nil {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
+				})
+				if err == io.EOF {
+					Log.Infoc(func() string {
+						return fmt.Sprintf("(%s) error reading from connection: %v", this.cid(), err)
+					})
+					return
+				}
+
+				continue
+			} else {
+				Log.Infoc(func() string {
+					return fmt.Sprintf("向ringbuffer些数据成功！")
+				})
 			}
 		}
 
