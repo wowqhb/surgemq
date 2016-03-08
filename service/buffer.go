@@ -336,7 +336,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    The number of bytes will NOT be len(p) but less than that.
 		//if cpos+n < ppos {
 		if cpos < ppos {
-			n := copy(p, &this.buf[cindex])
+			n := copy(p, *(this.buf[cindex]))
 
 			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
@@ -402,7 +402,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	total := ringCopy(&this.buf[start], p, int64(start)&this.mask)
+	total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	//this.buf[int64(start)&this.mask] = p
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
@@ -705,7 +705,7 @@ func ringCopy(dst, src []byte, start int64) int {
 			start = 0
 		}
 	}
-	dst[start] = tmp
+	dst[start] = &tmp
 	return i
 }
 
