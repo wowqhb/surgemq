@@ -124,6 +124,7 @@ func (this *service) processor() {
 }
 
 func (this *service) processIncoming(msg message.Message) error {
+	fmt.Println("processIncoming::::", msg.Name())
 	var err error = nil
 	//   Log.Errorc(func() string{ return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T", this.subs, len(this.subs), msg)})
 
