@@ -453,9 +453,9 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 	// If there's no data, then let's wait until there is some data
 	this.ccond.L.Lock()
 	for ; cpos >= ppos; ppos = this.pseq.get() {
-		if this.isDone() {
-			return nil, io.EOF
-		}
+		//if this.isDone() {
+		//	return nil, io.EOF
+		//}
 
 		this.cwait++
 		this.ccond.Wait()
