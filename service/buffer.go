@@ -303,7 +303,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				return total, err
 			}
 
-			_, err = this.ReadCommit(n /*n*/)
+			_, err = this.ReadCommit(n)
 			if err != nil {
 				Log.Errorc(func() string {
 					return fmt.Sprintf("this.ReadCommit error(%s)", err)
@@ -551,13 +551,13 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 // n will be returned. If there's not enough data, then the cursor will move forward
 // as much as possible, then return the number of positions (bytes) moved.
 func (this *buffer) ReadCommit(n int) (int, error) {
-	if int64(n) > this.size {
-		return 0, bufio.ErrBufferFull
-	}
-
-	if n < 0 {
-		return 0, bufio.ErrNegativeCount
-	}
+	//if int64(n) > this.size {
+	//	return 0, bufio.ErrBufferFull
+	//}
+	//
+	//if n < 0 {
+	//	return 0, bufio.ErrNegativeCount
+	//}
 
 	cpos := this.cseq.get()
 	ppos := this.pseq.get()
@@ -571,8 +571,8 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    the beginning of the buffer. In thise case, we can also just copy data from
 	//    buffer to p, and copy will just copy until the end of the buffer and stop.
 	//    The number of bytes will NOT be len(p) but less than that.
-	if cpos + int64(1) <= ppos {
-		this.cseq.set(cpos + 1 /*int64(n)*/)
+	if cpos < ppos {
+		this.cseq.set(cpos + 1)
 		//this.buf[cpos] = nil
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()

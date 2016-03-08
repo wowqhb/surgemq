@@ -206,6 +206,7 @@ func (this *service) start(client_id string) error {
 // FIXME: The order of closing here causes panic sometimes. For example, if receiver
 // calls this, and closes the buffers, somehow it causes buffer.go:476 to panid.
 func (this *service) stop() {
+	return
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
