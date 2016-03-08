@@ -238,7 +238,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if nlen == int64(0) {
 			return total, err
 		}
-
+		fmt.Println("sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
 		//if this.buf[pstart] != nil {
 		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
 		//}
@@ -256,9 +256,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		Log.Infoc(func() string {
 			return fmt.Sprintf("ReadFrom读取完成", total)
 		})
-		fmt.Println(this.buf)
-		fmt.Println(this.cseq.get())
-		fmt.Println(this.pseq.get())
 	}
 }
 
