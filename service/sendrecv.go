@@ -231,7 +231,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 	//total := int(remlen) + 1 + m
 
-	mtype := message.MessageType(*b[0] >> 4)
+	mtype := message.MessageType((*b)[0] >> 4)
 
 	//return mtype, total, err
 	var msg message.Message
@@ -387,7 +387,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 			return m, err
 		}
 	} else {
-		n, err = msg.Encode(*buf[0:])
+		n, err = msg.Encode((*buf)[0:])
 		if err != nil {
 			return 0, err
 		}
