@@ -177,7 +177,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		b := make([]byte, int64(5))
 		n, err := r.Read(b[0:1])
 		if err != nil {
-			return total, err
+			//return total, err
+			time.Sleep(2 * time.Millisecond)
+			continue
 		}
 		if n > 0 {
 			total += int64(n)
