@@ -184,12 +184,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		return nil, 0, err
 	}
 
-	// Let's read enough bytes to get the message header (msg type, remaining length)
-	//for {
-	// If we have read 5 bytes and still not done, then there's a problem.
-	//if cnt > 5 {
-	//	return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-	//}
 
 	// Peek cnt bytes from the input buffer.
 	b, err = this.in.ReadWait(cnt)
@@ -199,36 +193,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-	//fmt.Println("b=", b)
-	//// If not enough bytes are returned, then continue until there's enough.
-	//if len(b) < cnt {
-	//	continue
-	//}
 
-	// If we got enough bytes, then check the last byte to see if the continuation
-	// bit is set. If so, increment cnt and continue peeking
-	/*if b[cnt-1] >= 0x80 {
-		cnt++
-	} else {
-		break
-	}*/
-	//for {
-	//	if cnt > 5 {
-	//		return 0, 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-	//	}
-	//
-	//	if b[cnt-1] >= 0x80 {
-	//		cnt++
-	//	} else {
-	//		break
-	//	}
-	//}
-	//}
-
-	// Get the remaining length of the message
-	//remlen, m := binary.Uvarint(b[1:cnt])
-
-	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 	//total := int(remlen) + 1 + m
 	mtype := message.MessageType((b)[0] >> 4)
 
