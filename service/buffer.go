@@ -421,6 +421,12 @@ func (this *buffer) Write(p []byte) (int, error) {
 // If there's not enough data to peek, error is ErrBufferInsufficientData.
 // If n < 0, error is bufio.ErrNegativeCount
 func (this *buffer) ReadPeek(n int) ([]byte, error) {
+	defer Log.Debugc(func() string {
+		return fmt.Sprintf("ReadPeek 结束")
+	})
+	Log.Debugc(func() string {
+		return fmt.Sprintf("ReadPeek 开始执行")
+	})
 	if int64(n) > this.size {
 		return nil, bufio.ErrBufferFull
 	}
