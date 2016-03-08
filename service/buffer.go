@@ -25,19 +25,19 @@ import (
 )
 
 var (
-	bufcnt int64
+	bufcnt            int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize int64
+	DeviceInBufferSize  int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize int64
+	MasterInBufferSize  int64
 	MasterOutBufferSize int64
 )
 
 const (
-	smallRWBlockSize = 512
-	defaultReadBlockSize = 8192
+	smallRWBlockSize      = 512
+	defaultReadBlockSize  = 8192
 	defaultWriteBlockSize = 8192
 )
 
@@ -69,25 +69,25 @@ type ByteArray struct {
 }
 
 type buffer struct {
-	id             int64
+	id int64
 
-				    //buf []byte
-	buf            []*ByteArray //环形buffer指针数组
-				    //tmp []byte
-	tmp            []*ByteArray //环形buffer指针数组--临时
-	size           int64
-	mask           int64
+	//buf []byte
+	buf []*ByteArray //环形buffer指针数组
+	//tmp []byte
+	tmp  []*ByteArray //环形buffer指针数组--临时
+	size int64
+	mask int64
 
-	done           int64
+	done int64
 
-	pseq           *sequence
-	cseq           *sequence
+	pseq *sequence
+	cseq *sequence
 
-	pcond          *sync.Cond
-	ccond          *sync.Cond
+	pcond *sync.Cond
+	ccond *sync.Cond
 
-	cwait          int64
-	pwait          int64
+	cwait int64
+	pwait int64
 
 	readblocksize  int
 	writeblocksize int
@@ -208,11 +208,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1 : cnt + 1])
+		remlen, m := binary.Uvarint(b[1 : cnt+1])
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1 + m]...)
+		b__ = append(b__, b[0:1+m]...)
 
 		nlen := int64(0)
 		for nlen < remlen_64 {
@@ -417,7 +417,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
 	//p_ := make([]byte, 0, len(p))
 	//p_ = append(p_, p[0:]...)
-	this.buf[int64(start) & this.mask] = &ByteArray{bArray: p}
+	this.buf[int64(start)&this.mask] = &ByteArray{bArray: p}
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
@@ -467,7 +467,6 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 	// m = the number of bytes available. If m is more than what's requested (n),
 	// then we make m = n, basically peek max n bytes
 	err := error(nil)
-
 
 	// There's data to peek. The size of the data could be <= n.
 	if cpos < ppos {
@@ -614,9 +613,6 @@ func (this *buffer) WriteCommit(n int) (int, error) {
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
-	this.pcond.L.Lock()
-	this.pcond.Broadcast()
-	this.pcond.L.Unlock()
 
 	return n /*cnt*/, nil
 }
@@ -721,7 +717,7 @@ func (this *buffer) isDone() bool {
 }*/
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n & (n - 1)) == 0
+	return n != 0 && (n&(n-1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
