@@ -16,10 +16,13 @@ package service
 
 import (
 	"bufio"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -65,9 +68,10 @@ func (this *sequence) set(seq int64) {
 type buffer struct {
 	id int64
 
-	buf []byte
-	tmp []byte
-
+	//buf []byte
+	buf []*[]byte //环形buffer指针数组
+	//tmp []byte
+	tmp  []*[]byte //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -109,14 +113,14 @@ func newBuffer(size int64) (*buffer, error) {
 		writeblocksize = defaultWriteBlockSize
 	}
 
-	if size < int64(2*readblocksize) {
-		fmt.Printf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
-		return nil, fmt.Errorf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
-	}
+	//if size < int64(2*readblocksize) {
+	//	fmt.Printf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
+	//	return nil, fmt.Errorf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
+	//}
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([]byte, size),
+		buf:            make([]*[]byte, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -156,38 +160,94 @@ func (this *buffer) Len() int {
 
 func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	defer this.Close()
-
 	total := int64(0)
+	cnt_ := 32 //每次从conn中读取数据的字节数
+	if this.isDone() {
+		return total, io.EOF
+	}
 
-	for {
-		if this.isDone() {
-			return total, io.EOF
-		}
-
-		start, cnt, err := this.waitForWriteSpace(this.readblocksize)
-		if err != nil {
-			return 0, err
-		}
-
-		pstart := start & this.mask
-		pend := pstart + int64(cnt)
-		if pend > this.size {
-			pend = this.size
-		}
-
-		n, err := r.Read(this.buf[pstart:pend])
-
-		if n > 0 {
-			total += int64(n)
-			_, err := this.WriteCommit(n)
-			if err != nil {
-				return total, err
-			}
-		}
-
+	b := make([]byte, int64(5))
+	n, err := r.Read(b[0:1])
+	if n > 0 {
+		total += int64(n)
 		if err != nil {
 			return total, err
 		}
+	}
+
+	start, _, err := this.waitForWriteSpace(1 /*this.readblocksize*/)
+	if err != nil {
+		return int64(0), err
+	}
+
+	cnt := 1
+
+	// Let's read enough bytes to get the message header (msg type, remaining length)
+	for {
+		// If we have read 5 bytes and still not done, then there's a problem.
+		if cnt > 4 {
+			return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+		}
+		_, err := r.Read(b[cnt:(cnt + 1)])
+
+		//fmt.Println(b)
+		if err != nil {
+			return total, err
+		}
+		if b[cnt] >= 0x80 {
+			cnt++
+		} else {
+			break
+		}
+	}
+	remlen, m := binary.Uvarint(b[1:])
+	remlen_64 := int64(remlen)
+	total = remlen_64 + int64(1) + int64(m)
+	b__ := make([]byte, 0, total)
+	b__ = append(b__, b[0:1+m]...)
+	nlen := int64(0)
+
+	pstart := start & this.mask
+	max_times := 655365 / cnt_
+	for nlen < remlen_64 {
+		if this.isDone() {
+			return total, io.EOF
+		}
+		tmpBytes := make([]byte, cnt_)
+		n, err := r.Read(tmpBytes)
+
+		if err != nil {
+			if err == io.EOF {
+				time.Sleep(1 * time.Millisecond)
+				continue
+			}
+			return total, err
+		}
+
+		if n > 0 {
+			total += int64(n)
+			nlen += int64(n)
+			switch {
+			case n < cnt_:
+				b__ = append(b__, tmpBytes[0:n]...)
+			case n == cnt_:
+				b__ = append(b__, tmpBytes[0:]...)
+			}
+
+		}
+		max_times--
+		if max_times < 0 {
+			return total, errors.New("从conn中读取数据：读取超过最大读取次数")
+		}
+	}
+
+	//if this.buf[pstart] != nil {
+	//	return total, errors.New("ringbuffer is not nil,it is readonly now")
+	//}
+	this.buf[pstart] = &b__
+	_, err = this.WriteCommit(1 /*n*/)
+	if err != nil {
+		return total, err
 	}
 }
 
@@ -201,7 +261,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			return total, io.EOF
 		}
 
-		p, err := this.ReadPeek(this.writeblocksize)
+		p, err := this.ReadPeek(1 /*this.writeblocksize*/)
 
 		// There's some data, let's process it first
 		if len(p) > 0 {
@@ -213,7 +273,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				return total, err
 			}
 
-			_, err = this.ReadCommit(n)
+			_, err = this.ReadCommit(1 /*n*/)
 			if err != nil {
 				return total, err
 			}
@@ -231,7 +291,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 		return 0, io.EOF
 	}
 
-	pl := int64(len(p))
+	//pl := int64(len(p))
 
 	for {
 		cpos := this.cseq.get()
@@ -247,10 +307,11 @@ func (this *buffer) Read(p []byte) (int, error) {
 		//    the beginning of the buffer. In thise case, we can also just copy data from
 		//    buffer to p, and copy will just copy until the end of the buffer and stop.
 		//    The number of bytes will NOT be len(p) but less than that.
-		if cpos+pl < ppos {
-			n := copy(p, this.buf[cindex:])
+		//if cpos+n < ppos {
+		if cpos < ppos {
+			n := copy(p, this.buf[cindex])
 
-			this.cseq.set(cpos + int64(n))
+			this.cseq.set(cpos + int64(1 /*n*/))
 			this.pcond.L.Lock()
 			this.pcond.Broadcast()
 			this.pcond.L.Unlock()
@@ -263,7 +324,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 
 		// If cpos < ppos, that means there's at least ppos-cpos bytes to read. Let's just
 		// send that back for now.
-		if cpos < ppos {
+		/*if cpos < ppos {
 			// n bytes available
 			b := ppos - cpos
 
@@ -284,7 +345,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 			this.pcond.Broadcast()
 			this.pcond.L.Unlock()
 			return n, nil
-		}
+		}*/
 
 		// If we got here, that means cpos >= ppos, which means there's no data available.
 		// If so, let's wait...
@@ -373,16 +434,19 @@ func (this *buffer) ReadPeek(n int) ([]byte, error) {
 
 		// If cindex (index relative to buffer) + n is more than buffer size, that means
 		// the data wrapped
-		if cindex+m > this.size {
+		/*if cindex+m > this.size {
 			// reset the tmp buffer
 			this.tmp = this.tmp[0:0]
 
-			l := len(this.buf[cindex:])
+			l := len(this.buf[this.buf[cindex:]])
 			this.tmp = append(this.tmp, this.buf[cindex:]...)
 			this.tmp = append(this.tmp, this.buf[0:m-int64(l)]...)
 			return this.tmp, err
 		} else {
 			return this.buf[cindex : cindex+m], err
+		}*/
+		if this.buf[cindex] != nil {
+			return this.buf[cindex], err
 		}
 	}
 
@@ -478,33 +542,34 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 // 2. a boolean indicating whether the bytes available wraps around the ring
 // 3. any errors encountered. If there's error then other return values are invalid
 func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
-	start, cnt, err := this.waitForWriteSpace(n)
+	start, _, err := this.waitForWriteSpace(1 /*n*/)
 	if err != nil {
 		return nil, false, err
 	}
 
 	pstart := start & this.mask
-	if pstart+int64(cnt) > this.size {
+	/*if pstart+int64(cnt) > this.size {
 		return this.buf[pstart:], true, nil
 	}
 
-	return this.buf[pstart : pstart+int64(cnt)], false, nil
+	return this.buf[pstart : pstart+int64(cnt)], false, nil*/
+	return this.buf[pstart], false, nil
 }
 
 func (this *buffer) WriteCommit(n int) (int, error) {
-	start, cnt, err := this.waitForWriteSpace(n)
+	start, _, err := this.waitForWriteSpace(1 /*n*/)
 	if err != nil {
 		return 0, err
 	}
 
 	// If we are here then there's enough bytes to commit
-	this.pseq.set(start + int64(cnt))
-
+	//this.pseq.set(start + int64(cnt))
+	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
 
-	return cnt, nil
+	return n /*cnt*/, nil
 }
 
 func (this *buffer) waitForWriteSpace(n int) (int64, int, error) {
@@ -517,8 +582,8 @@ func (this *buffer) waitForWriteSpace(n int) (int64, int, error) {
 	ppos := this.pseq.get()
 
 	// The next producer position we will get to if we write len(p)
-	next := ppos + int64(n)
-
+	//next := ppos + int64(n)
+	next := ppos + int64(1)
 	// For the producer, gate is the previous consumer sequence.
 	gate := this.pseq.gate
 
