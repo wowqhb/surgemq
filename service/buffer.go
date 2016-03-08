@@ -111,7 +111,7 @@ func newBuffer(size int64) (*buffer, error) {
 	}
 
 	var readblocksize, writeblocksize int
-	if size <= 8192 {
+	if size <= 64 {
 		readblocksize = smallRWBlockSize
 		writeblocksize = smallRWBlockSize
 	} else {
