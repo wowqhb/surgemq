@@ -69,10 +69,9 @@ func (this *service) processor() {
 		//     this.rmu.Lock()
 
 		msg, n, err := this.peekMessageSize()
-		Log.Infoc(func() string {
-			return fmt.Sprintf("(%s) processor处理message(%s)", this.cid(), msg.Name())
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) processor>>>===>>>message(%s)", this.cid(), msg.Name())
 		})
-		if err != nil {
 			if err == io.EOF {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
