@@ -264,6 +264,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			return fmt.Sprintf("WriteTo发送开始")
 		})
 		if this.isDone() {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("WriteTo EOF")
+			})
 			return total, io.EOF
 		}
 
@@ -276,16 +279,25 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			//Log.Debugc(func() string{ return fmt.Sprintf("Wrote %d bytes, totaling %d bytes", n, total)})
 
 			if err != nil {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("w.Write(p) error(%s)", err)
+				})
 				return total, err
 			}
 
 			_, err = this.ReadCommit(n /*n*/)
 			if err != nil {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("this.ReadCommit error(%s)", err)
+				})
 				return total, err
 			}
 		}
 
 		if err != ErrBufferInsufficientData && err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("ErrBufferInsufficientData error(%s)", err)
+			})
 			return total, err
 		}
 		Log.Infoc(func() string {
