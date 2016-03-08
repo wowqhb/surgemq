@@ -506,7 +506,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 
 	// This is the magic read-to position. The producer position must be equal or
 	// greater than the next position we read to.
-	next := cpos + int64(n)
+	next := cpos + int64(1/*n*/)
 
 	// If there's no data, then let's wait until there is some data
 	this.ccond.L.Lock()
