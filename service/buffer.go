@@ -162,7 +162,13 @@ func (this *buffer) Len() int {
 }
 
 func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
-	defer this.Close()
+	defer func() {
+		Log.Infoc(func() string {
+			return fmt.Sprintf("ReadFrom::::defer::::close")
+		})
+		this.Close()
+	}()
+
 	total := int64(0)
 	cnt_ := 32 //每次从conn中读取数据的字节数
 	for {
@@ -295,12 +301,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return fmt.Sprintf("ReadFrom读取完成", total)
 		})
 
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
-	defer this.Close()
+	defer func() {
+		Log.Infoc(func() string {
+			return fmt.Sprintf("WriteTo::::defer::::close")
+		})
+		this.Close()
+	}()
 
 	total := int64(0)
 
@@ -370,16 +380,6 @@ func (this *buffer) Read(p []byte) (int, error) {
 		ppos := this.pseq.get()
 		cindex := cpos & this.mask
 
-		// If consumer position is at least len(p) less than producer position, that means
-		// we have enough data to fill p. There are two scenarios that could happen:
-		// 1. cindex + len(p) < buffer size, in this case, we can just copy() data from
-		//    buffer to p, and copy will just copy enough to fill p and stop.
-		//    The number of bytes copied will be len(p).
-		// 2. cindex + len(p) > buffer size, this means the data will wrap around to the
-		//    the beginning of the buffer. In thise case, we can also just copy data from
-		//    buffer to p, and copy will just copy until the end of the buffer and stop.
-		//    The number of bytes will NOT be len(p) but less than that.
-		//if cpos+n < ppos {
 		if cpos < ppos {
 			n := copy(p, this.buf[cindex].bArray)
 
@@ -391,36 +391,6 @@ func (this *buffer) Read(p []byte) (int, error) {
 			return n, nil
 		}
 
-		// If we got here, that means there's not len(p) data available, but there might
-		// still be data.
-
-		// If cpos < ppos, that means there's at least ppos-cpos bytes to read. Let's just
-		// send that back for now.
-		/*if cpos < ppos {
-			// n bytes available
-			b := ppos - cpos
-
-			// bytes copied
-			var n int
-
-			// if cindex+n < size, that means we can copy all n bytes into p.
-			// No wrapping in this case.
-			if cindex+b < this.size {
-				n = copy(p, this.buf[cindex:cindex+b])
-			} else {
-				// If cindex+n >= size, that means we can copy to the end of buffer
-				n = copy(p, this.buf[cindex:])
-			}
-
-			this.cseq.set(cpos + int64(n))
-			this.pcond.L.Lock()
-			this.pcond.Broadcast()
-			this.pcond.L.Unlock()
-			return n, nil
-		}*/
-
-		// If we got here, that means cpos >= ppos, which means there's no data available.
-		// If so, let's wait...
 
 		this.ccond.L.Lock()
 		for ppos = this.pseq.get(); cpos >= ppos; ppos = this.pseq.get() {
