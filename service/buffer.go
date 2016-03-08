@@ -402,14 +402,14 @@ func (this *buffer) Write(p []byte) (int, error) {
 
 	// If we are here that means we now have enough space to write the full p.
 	// Let's copy from p into this.buf, starting at position ppos&this.mask.
-	total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
-	//this.buf[int64(start)&this.mask] = p
+	//total := ringCopy(*(this.buf[start]), p, int64(start)&this.mask)
+	this.buf[int64(start)&this.mask] = &p
 	this.pseq.set(start + int64(1))
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
 
-	return total, nil
+	return len(p), nil
 }
 
 // Description below is copied completely from bufio.Peek()
@@ -691,7 +691,7 @@ func (this *buffer) isDone() bool {
 	return false
 }
 
-func ringCopy(dst, src []byte, start int64) int {
+/*func ringCopy(dst, src []byte, start int64) int {
 	n := len(src)
 
 	i, l := 0, 0
@@ -700,14 +700,14 @@ func ringCopy(dst, src []byte, start int64) int {
 		l = copy(tmp[0:], src[i:])
 		i += l
 		n -= l
-
-		if n > 0 {
-			start = 0
-		}
+		//
+		//if n > 0 {
+		//	start = 0
+		//}
 	}
 	dst[start] = &tmp
 	return i
-}
+}*/
 
 func powerOfTwo64(n int64) bool {
 	return n != 0 && (n&(n-1)) == 0
