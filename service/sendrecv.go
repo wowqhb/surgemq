@@ -207,7 +207,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
 	})
 	_, err = msg.Decode(b)
-	fmt.Println("this.in.readwait=", msg.Len())
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure", this.cid())
@@ -217,6 +216,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
 	})
+	fmt.Println("this.in.readwait=", msg.Len())
 	return msg, len(b), err
 }
 
