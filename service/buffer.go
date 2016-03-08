@@ -36,9 +36,12 @@ var (
 )
 
 const (
-	smallRWBlockSize      = 512
+	/*smallRWBlockSize      = 512
 	defaultReadBlockSize  = 8192
-	defaultWriteBlockSize = 8192
+	defaultWriteBlockSize = 8192*/
+	smallRWBlockSize      = 64
+	defaultReadBlockSize  = 64
+	defaultWriteBlockSize = 64
 )
 
 type sequence struct {
