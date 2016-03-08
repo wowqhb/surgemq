@@ -573,6 +573,9 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
+		this.ccond.L.Lock()
+		this.ccond.Broadcast()
+		this.ccond.L.Unlock()
 		return n, nil
 	}
 
@@ -610,6 +613,9 @@ func (this *buffer) WriteCommit(n int) (int, error) {
 	this.ccond.L.Lock()
 	this.ccond.Broadcast()
 	this.ccond.L.Unlock()
+	this.pcond.L.Lock()
+	this.pcond.Broadcast()
+	this.pcond.L.Unlock()
 
 	return n /*cnt*/, nil
 }

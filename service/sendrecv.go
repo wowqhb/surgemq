@@ -230,8 +230,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 
 	// Total message length is remlen + 1 (msg type) + m (remlen bytes)
 	//total := int(remlen) + 1 + m
-	fmt.Println(b)
-	fmt.Println((*b)[0])
 	mtype := message.MessageType((*b)[0] >> 4)
 
 	//return mtype, total, err
