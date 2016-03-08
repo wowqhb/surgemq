@@ -194,7 +194,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	}
 	//total := int(remlen) + 1 + m
 	mtype := message.MessageType((b)[0] >> 4)
-	fmt.Println("this.in.readwait=", mtype)
 	//return mtype, total, err
 	var msg message.Message
 	msg, err = mtype.New()
@@ -208,6 +207,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
 	})
 	_, err = msg.Decode(b)
+	fmt.Println("this.in.readwait=", msg.Len())
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure", this.cid())
