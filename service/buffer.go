@@ -206,8 +206,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		b__ = append(b__, b[0:1+m]...)
 
 		nlen := int64(0)
-		for nlen < int64(remlen) {
-			b_ := make([]byte, 64)
+		for nlen < remlen_64 {
+			b_ := make([]byte, cnt_)
 			//b_ := make([]byte, remlen)
 			n, err = r.Read(b_)
 
@@ -240,7 +240,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		//}
 		start, _, err := this.waitForWriteSpace(int(total) /*this.readblocksize*/)
 		if err != nil {
-			return int64(0), err
+			return total, err
 		}
 		pstart := start & this.mask
 		this.buf[pstart] = &b__
