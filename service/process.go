@@ -81,7 +81,8 @@ func (this *service) processor() {
 					return fmt.Sprintf("(%s) Error peeking next message: %v", this.cid(), err)
 				})
 			}
-			return
+			//return
+			continue
 		}
 		//     this.rmu.Unlock()
 

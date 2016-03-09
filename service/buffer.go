@@ -37,8 +37,8 @@ var (
 
 const (
 	/*smallRWBlockSize      = 512
-	defaultReadBlockSize  = 8192
-	defaultWriteBlockSize = 8192*/
+	  defaultReadBlockSize  = 8192
+	  defaultWriteBlockSize = 8192*/
 	smallRWBlockSize      = 64
 	defaultReadBlockSize  = 64
 	defaultWriteBlockSize = 64
@@ -499,10 +499,12 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 	// If there's no data, then let's wait until there is some data
 	this.ccond.L.Lock()
 	for ; next > ppos; ppos = this.pseq.get() {
-		/*if this.isDone() {
-			fmt.Println("ReadWait==>this.isDone()")
+		if this.isDone() {
+			Log.Debugc(func() string {
+				return fmt.Sprintf("ReadWait::>this.isDone()==true")
+			})
 			return nil, io.EOF
-		}*/
+		}
 
 		this.ccond.Wait()
 	}
