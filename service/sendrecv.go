@@ -305,10 +305,11 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 // writeMessage() writes a message to the outgoing buffer
 func (this *service) writeMessage(msg message.Message) (int, error) {
 	var (
-		l           int = msg.Len()
-		m, n, start int
-		err         error
-		buf         []byte
+		l     int = msg.Len()
+		m, n  int
+		err   error
+		buf   []byte
+		start int64
 		//wrap bool
 	)
 
@@ -332,7 +333,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	defer this.wmu.Unlock()
 
 	//buf, wrap, err = this.out.WriteWait(l)//zheliyouwenti
-	start, _, err = this.out.waitForWriteSpace(int64(l))
+	start, _, err = this.out.waitForWriteSpace(l)
 	if err != nil {
 		return 0, err
 	}
