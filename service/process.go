@@ -81,9 +81,9 @@ func (this *service) processor() {
 					return fmt.Sprintf("(%s) Error peeking next message: %v", this.cid(), err)
 				})
 			}
-			//return
-			continue
+			return
 		}
+		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
 		//     this.rmu.Unlock()
 
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
