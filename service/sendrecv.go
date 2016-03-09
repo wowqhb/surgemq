@@ -332,7 +332,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	defer this.wmu.Unlock()
 
 	//buf, wrap, err = this.out.WriteWait(l)//zheliyouwenti
-	start, _, err = this.out.waitForWriteSpace(l)
+	start, _, err = this.out.waitForWriteSpace(int64(l))
 	if err != nil {
 		return 0, err
 	}
