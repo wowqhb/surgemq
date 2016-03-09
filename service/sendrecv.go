@@ -188,7 +188,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	b, err = this.in.ReadWait(cnt)
 	if err != nil {
 		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure", this.cid())
+			return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure:%v", this.cid(), err)
 		})
 		return nil, 0, err
 	}
@@ -199,7 +199,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	msg, err = mtype.New()
 	if err != nil {
 		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize mtype.New() falure", this.cid())
+			return fmt.Sprintf("(%s) peekMessageSize mtype.New() falure:%v", this.cid(), err)
 		})
 		return nil, 0, err
 	}
@@ -209,7 +209,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	_, err = msg.Decode(b)
 	if err != nil {
 		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure", this.cid())
+			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure:%v", this.cid(), err)
 		})
 		return nil, 0, err
 	}
@@ -347,7 +347,6 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
 
 	this.outStat.increment(int64(m))
 
