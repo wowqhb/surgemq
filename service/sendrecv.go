@@ -165,11 +165,14 @@ func (this *service) sender() {
 // peekMessageSize() reads, but not commits, enough bytes to determine the size of
 // the next message and returns the type and size.
 func (this *service) peekMessageSize() (message.Message, int, error) {
-	fmt.Println("(", this.cid(), ")", "this.in.buf=", this.in.buf)
-	fmt.Println("(", this.cid(), ")", "this.out.buf=", this.out.buf)
-	Log.Infoc(func() string {
-		return fmt.Sprintf("(%s) peekMessageSize开始", this.cid())
-	})
+	//fmt.Println("(", this.cid(), ")", "this.in.buf=", this.in.buf)
+	//fmt.Println("(", this.cid(), ")", "this.out.buf=", this.out.buf)
+	//Log.Infoc(func() string {
+	//	return fmt.Sprintf("(%s) peekMessageSize开始", this.cid())
+	//})
+	if this.isDone() {
+		return nil, 0, io.EOF
+	}
 	var (
 		b   []byte
 		err error
@@ -215,7 +218,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
 	})
-	fmt.Println("this.in.readwait=", msg.Len())
+	//fmt.Println("this.in.readwait=", msg.Len())
 	return msg, len(b), err
 }
 

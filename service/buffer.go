@@ -184,7 +184,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return fmt.Sprintf("ReadFrom开始读取", total)
 		})
 		if this.isDone() {
-			fmt.Println("ReadFrom isDone!")
+			//fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
 		}
 		b := make([]byte, int64(5))
@@ -254,8 +254,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			nlen += int64(n)
 			total += int64(n)
 		}
-		fmt.Println("b=", b)
-		fmt.Println("b__=", b__)
+		//fmt.Println("b=", b)
+		//fmt.Println("b__=", b__)
 		/*if nlen == int64(0) {
 			return total, err
 		}*/
@@ -292,9 +292,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	total := int64(0)
 
 	for {
-		Log.Infoc(func() string {
-			return fmt.Sprintf("WriteTo发送开始")
-		})
+		//Log.Infoc(func() string {
+		//	return fmt.Sprintf("WriteTo发送开始")
+		//})
 		if this.isDone() {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("WriteTo EOF")
