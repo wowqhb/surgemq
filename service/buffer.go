@@ -269,7 +269,22 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		pstart := start & this.mask
 		//b__[len(b__)-1] = 0x1
-		this.buf[pstart] = &ByteArray{bArray: b__}
+		if this.buf[pstart] == nil {
+			this.buf[pstart] = &ByteArray{bArray: b__}
+		} else {
+			this.pcond.L.Lock()
+			for this.buf[pstart] == nil {
+				if this.isDone() {
+					return 0, 0, io.EOF
+				}
+				this.pwait++
+				this.pcond.Wait()
+
+			}
+			this.pcond.L.Unlock()
+			this.buf[pstart] = &ByteArray{bArray: b__}
+		}
+
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
@@ -494,7 +509,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    The number of bytes will NOT be len(p) but less than that.
 	if cpos < ppos {
 		this.cseq.set(cpos + 1)
-		//this.buf[cpos] = nil
+		this.buf[cpos] = nil
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
