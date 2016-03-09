@@ -495,7 +495,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    The number of bytes will NOT be len(p) but less than that.
 	if cpos < ppos {
 		this.cseq.set(cpos + 1)
-		//this.buf[cpos] = nil
+		this.buf[cpos] = nil
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
