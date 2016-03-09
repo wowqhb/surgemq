@@ -188,9 +188,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, io.EOF
 		}
 		b := make([]byte, int64(5))
-		n, err := r.Read(b[0:])
+		n, err := r.Read(b[0:1])
 		if err != nil {
 			return total, err
+			//time.Sleep(2 * time.Millisecond)
+			//continue
 		}
 		if n > 0 {
 			total += int64(n)
@@ -202,7 +204,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			if cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
+			_, err := r.Read(b[cnt:(cnt + 1)])
 
+			//fmt.Println(b)
+			if err != nil {
+				time.Sleep(2 * time.Millisecond)
+				continue
+			}
 			if b[cnt] >= 0x80 {
 				cnt++
 			} else {
@@ -210,10 +218,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 		}
 		remlen, m := binary.Uvarint(b[1 : cnt+1])
-		remlen_64 := int64(remlen) - (int64(4) - int64(m))
-		total = remlen_64 + int64(5)
+		remlen_64 := int64(remlen)
+		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:cnt+1]...)
+		b__ = append(b__, b[0:1+m]...)
 		nlen := int64(0)
 		for nlen < remlen_64 {
 			tmpm := remlen_64 - nlen
@@ -248,6 +256,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			nlen += int64(n)
 			total += int64(n)
 		}
+		fmt.Println("b=", b)
+		fmt.Println("b__=", b__)
 		if nlen == int64(0) {
 			return total, err
 		}
@@ -501,22 +511,18 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 // 2. a boolean indicating whether the bytes available wraps around the ring
 // 3. any errors encountered. If there's error then other return values are invalid
 /*func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
-start, _, err := this.waitForWriteSpace(n */
-/*n*/
-/*)
+start, _, err := this.waitForWriteSpace(n */ /*n*/ /*)
 if err != nil {
-       return nil, false, err
+	return nil, false, err
 }
 
 pstart := start & this.mask
-*/
-/*if pstart+int64(cnt) > this.size {
-       return this.buf[pstart:], true, nil
+*/ /*if pstart+int64(cnt) > this.size {
+	return this.buf[pstart:], true, nil
 }
 
-return this.buf[pstart : pstart+int64(cnt)], false, nil*/
-/*
-       return this.buf[pstart].bArray, false, nil
+return this.buf[pstart : pstart+int64(cnt)], false, nil*/ /*
+	return this.buf[pstart].bArray, false, nil
 }*/
 
 func (this *buffer) WriteCommit(n int) (int, error) {
