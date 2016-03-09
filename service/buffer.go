@@ -25,22 +25,22 @@ import (
 )
 
 var (
-	bufcnt int64
+	bufcnt            int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize int64
+	DeviceInBufferSize  int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize int64
+	MasterInBufferSize  int64
 	MasterOutBufferSize int64
 )
 
 const (
-/*smallRWBlockSize      = 512
-  defaultReadBlockSize  = 8192
-  defaultWriteBlockSize = 8192*/
-	smallRWBlockSize = 64
-	defaultReadBlockSize = 64
+	/*smallRWBlockSize      = 512
+	  defaultReadBlockSize  = 8192
+	  defaultWriteBlockSize = 8192*/
+	smallRWBlockSize      = 64
+	defaultReadBlockSize  = 64
 	defaultWriteBlockSize = 64
 )
 
@@ -72,25 +72,25 @@ type ByteArray struct {
 }
 
 type buffer struct {
-	id             int64
+	id int64
 
-				   //buf []byte
-	buf            []ByteArray //环形buffer指针数组
-				   //tmp []byte
-	tmp            []ByteArray //环形buffer指针数组--临时
-	size           int64
-	mask           int64
+	//buf []byte
+	buf []ByteArray //环形buffer指针数组
+	//tmp []byte
+	tmp  []ByteArray //环形buffer指针数组--临时
+	size int64
+	mask int64
 
-	done           int64
+	done int64
 
-	pseq           *sequence
-	cseq           *sequence
+	pseq *sequence
+	cseq *sequence
 
-	pcond          *sync.Cond
-	ccond          *sync.Cond
+	pcond *sync.Cond
+	ccond *sync.Cond
 
-	cwait          int64
-	pwait          int64
+	cwait int64
+	pwait int64
 
 	readblocksize  int
 	writeblocksize int
@@ -217,13 +217,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1 : cnt + 1])
-		remlen_64 := int64(remlen)
-		total = remlen_64 + 3 + int64(1) + int64(m)
+		remlen, m := binary.Uvarint(b[1 : cnt+1])
+		remlen_64 := int64(remlen + 3)
+		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1 + m]...)
+		b__ = append(b__, b[0:1+m]...)
 		nlen := int64(0)
-		for nlen < remlen_64 + 3 {
+		for nlen < remlen_64 {
 			tmpm := remlen_64 - nlen
 
 			var b_ []byte
@@ -645,7 +645,7 @@ func (this *buffer) isDone() bool {
 }*/
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n & (n - 1)) == 0
+	return n != 0 && (n&(n-1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
