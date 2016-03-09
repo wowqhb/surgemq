@@ -301,7 +301,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			})
 			return total, io.EOF
 		}
-		p, err := this.ReadPeek(1)
+		p, err := this.ReadPeek()
 		if err != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("this.ReadPeek error(%s)", err)
@@ -417,61 +417,8 @@ func (this *buffer) Read(p []byte) (int, error) {
 // b's buffer size.
 // If there's not enough data to peek, error is ErrBufferInsufficientData.
 // If n < 0, error is bufio.ErrNegativeCount
-func (this *buffer) ReadPeek(n int) ([]byte, error) {
-	defer Log.Debugc(func() string {
-		return fmt.Sprintf("ReadPeek 结束")
-	})
-	Log.Debugc(func() string {
-		return fmt.Sprintf("ReadPeek 开始执行")
-	})
-	if int64(n) > this.size {
-		return nil, bufio.ErrBufferFull
-	}
-
-	if n < 0 {
-		return nil, bufio.ErrNegativeCount
-	}
-
-	cpos := this.cseq.get()
-	ppos := this.pseq.get()
-
-	// If there's no data, then let's wait until there is some data
-	this.ccond.L.Lock()
-	for ; cpos >= ppos; ppos = this.pseq.get() {
-		//if this.isDone() {
-		//	return nil, io.EOF
-		//}
-
-		this.cwait++
-		this.ccond.Wait()
-	}
-	this.ccond.L.Unlock()
-
-	// m = the number of bytes available. If m is more than what's requested (n),
-	// then we make m = n, basically peek max n bytes
-
-	// There's data to peek. The size of the data could be <= n.
-	if cpos < ppos {
-		cindex := cpos & this.mask
-
-		// If cindex (index relative to buffer) + n is more than buffer size, that means
-		// the data wrapped
-		/*if cindex+m > this.size {
-			// reset the tmp buffer
-			this.tmp = this.tmp[0:0]
-
-			l := len(this.buf[this.buf[cindex:]])
-			this.tmp = append(this.tmp, this.buf[cindex:]...)
-			this.tmp = append(this.tmp, this.buf[0:m-int64(l)]...)
-			return this.tmp, err
-		} else {
-			return this.buf[cindex : cindex+m], err
-		}*/
-		array := this.buf[cindex].bArray
-		return array, nil
-	}
-
-	return nil, ErrBufferInsufficientData
+func (this *buffer) ReadPeek() ([]byte, error) {
+	return this.ReadWait()
 }
 
 // Wait waits for for n bytes to be ready. If there's not enough data, then it will
