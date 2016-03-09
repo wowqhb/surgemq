@@ -187,7 +187,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
 		}
-		b := make([]byte, int64(3))
+		b := make([]byte, int64(5))
 		n, err := r.Read(b[0:1])
 		if err != nil {
 			return total, err
@@ -221,7 +221,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_64 := int64(remlen)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
-		b__ = append(b__, b[0:1+m]...)
+		b__ = append(b__, b[0:cnt+1]...)
 		nlen := int64(0)
 		for nlen < remlen_64 {
 			tmpm := remlen_64 - nlen
