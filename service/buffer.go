@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"github.com/spf13/cobra"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -320,6 +321,13 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 		p, err := this.ReadPeek()
 		if err != nil {
+			if err == ErrBufferNotNewData {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("this.ReadPeek debug(%s)", err)
+				})
+				time.Second(100 * time.Millisecond)
+				continue
+			}
 			Log.Errorc(func() string {
 				return fmt.Sprintf("this.ReadPeek error(%s)", err)
 			})
@@ -481,6 +489,9 @@ func (this *buffer) ReadWait() ([]byte, error) {
 		return this.tmp[:n], nil
 	}*/
 	array := this.buf[cindex].bArray
+	if cpos > this.buf[cindex] {
+		return nil, ErrBufferNotNewData
+	}
 	return array, nil
 }
 
