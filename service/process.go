@@ -83,7 +83,7 @@ func (this *service) processor() {
 			}
 			return
 		}
-		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
+
 		//     this.rmu.Unlock()
 
 		//Log.Debugc(func() string{ return fmt.Sprintf("(%s) Received: %s", this.cid(), msg)})
@@ -92,6 +92,7 @@ func (this *service) processor() {
 
 		// 5. Process the read message
 		err = this.processIncoming(msg)
+		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
 		if err != nil {
 			if err != errDisconnect {
 				Log.Errorc(func() string {
