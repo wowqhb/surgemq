@@ -91,8 +91,9 @@ func (this *service) processor() {
 		this.inStat.increment(int64(n))
 
 		// 5. Process the read message
-		err = this.processIncoming(msg)
 		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
+		err = this.processIncoming(msg)
+
 		if err != nil {
 			if err != errDisconnect {
 				Log.Errorc(func() string {
