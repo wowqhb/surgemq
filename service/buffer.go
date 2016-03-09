@@ -208,6 +208,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			//fmt.Println(b)
 			if err != nil {
+				if this.isDone() {
+					return total, io.EOF
+				}
 				time.Sleep(2 * time.Millisecond)
 				continue
 			}
@@ -240,6 +243,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
 				})
+				if this.isDone() {
+					return total, io.EOF
+				}
 				time.Sleep(2 * time.Millisecond)
 				continue
 				//return total,err
