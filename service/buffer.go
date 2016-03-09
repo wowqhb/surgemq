@@ -240,6 +240,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			n, err = r.Read(b_[0:])
 
 			if err != nil {
+				if this.isDone() {
+					return total, err
+				}
 				Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
 				})
