@@ -275,7 +275,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			this.pcond.L.Lock()
 			for this.buf[pstart] == nil {
 				if this.isDone() {
-					return 0, 0, io.EOF
+					return total, io.EOF
 				}
 				this.pwait++
 				this.pcond.Wait()
