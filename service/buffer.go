@@ -459,7 +459,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 			Log.Debugc(func() string {
 				return fmt.Sprintf("ReadWait::>this.isDone()==true")
 			})
-			return nil, io.EOF
+			return nil, 0, io.EOF
 		}
 		this.cwait++
 		this.ccond.Wait()
