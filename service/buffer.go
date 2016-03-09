@@ -244,15 +244,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				continue
 				//return total,err
 			}
-			switch {
-			case n == 0:
-				break
-			case n < 64:
-				b__ = append(b__, b_[0:n]...)
-			default:
-				b__ = append(b__, b_[0:]...)
-			}
-
+			b__ = append(b__, b_[0:]...)
 			nlen += int64(n)
 			total += int64(n)
 		}
