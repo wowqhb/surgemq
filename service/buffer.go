@@ -330,7 +330,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				})
 				return total, err
 			}
-		}else{
+		} else {
 			this.pcond.L.Lock()
 			this.pcond.Broadcast()
 			this.pcond.L.Unlock()
@@ -500,6 +500,7 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 	this.ccond.L.Lock()
 	for ; next > ppos; ppos = this.pseq.get() {
 		if this.isDone() {
+			fmt.Println("ReadWait==>this.isDone()")
 			return nil, io.EOF
 		}
 
