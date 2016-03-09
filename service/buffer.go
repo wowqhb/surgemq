@@ -218,7 +218,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 		}
 		remlen, m := binary.Uvarint(b[1 : cnt+1])
-		remlen_64 := int64(remlen + 3)
+		remlen_64 := int64(remlen + 2)
 		total = remlen_64 + int64(1) + int64(m)
 		b__ := make([]byte, 0, total)
 		b__ = append(b__, b[0:1+m]...)
