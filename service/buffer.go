@@ -208,6 +208,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			//fmt.Println(b)
 			if err != nil {
+				if this.isDone() {
+					return total, err
+				}
 				time.Sleep(2 * time.Millisecond)
 				continue
 			}
