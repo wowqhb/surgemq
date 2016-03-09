@@ -499,10 +499,10 @@ func (this *buffer) ReadWait(n int) ([]byte, error) {
 	// If there's no data, then let's wait until there is some data
 	this.ccond.L.Lock()
 	for ; next > ppos; ppos = this.pseq.get() {
-		if this.isDone() {
+		/*if this.isDone() {
 			fmt.Println("ReadWait==>this.isDone()")
 			return nil, io.EOF
-		}
+		}*/
 
 		this.ccond.Wait()
 	}
