@@ -171,7 +171,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return fmt.Sprintf("ReadFrom from panic: %v", r)
 			})
 		}
-		Log.Infoc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("ReadFrom::::defer::::close")
 		})
 		this.Close()
@@ -180,7 +180,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 	cnt_ := 1 //每次从conn中读取数据的字节数
 	for {
-		Log.Infoc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("ReadFrom开始读取", total)
 		})
 		if this.isDone() {
@@ -274,7 +274,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if err != nil {
 			return total, err
 		}
-		Log.Infoc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("ReadFrom读取完成", total)
 		})
 
@@ -283,7 +283,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer func() {
-		Log.Infoc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("WriteTo::::defer::::close")
 		})
 		this.Close()

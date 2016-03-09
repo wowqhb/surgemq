@@ -68,7 +68,7 @@ func (this *service) processor() {
 		//     this.rmu.Lock()
 
 		msg, n, err := this.peekMessageSize()
-		Log.Infoc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("(%s) processor===>>>message(%v)", this.cid(), msg)
 		})
 		if err != nil {
