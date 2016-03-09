@@ -180,9 +180,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 	cnt_ := 1 //每次从conn中读取数据的字节数
 	for {
-		Log.Debugc(func() string {
+		/*Log.Debugc(func() string {
 			return fmt.Sprintf("ReadFrom开始读取", total)
-		})
+		})*/
 		if this.isDone() {
 			//fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
@@ -269,7 +269,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		pstart := start & this.mask
 		//b__[len(b__)-1] = 0x1
-		if this.buf[pstart] == nil {
+		this.buf[pstart] = &ByteArray{bArray: b__}
+		/*if this.buf[pstart] == nil {
 			this.buf[pstart] = &ByteArray{bArray: b__}
 		} else {
 			this.pcond.L.Lock()
@@ -283,15 +284,15 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 			this.pcond.L.Unlock()
 			this.buf[pstart] = &ByteArray{bArray: b__}
-		}
+		}*/
 
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
 		}
-		Log.Debugc(func() string {
+		/*Log.Debugc(func() string {
 			return fmt.Sprintf("ReadFrom读取完成", total)
-		})
+		})*/
 
 	}
 }
