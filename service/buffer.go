@@ -428,7 +428,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 	Log.Debugc(func() string {
 		return fmt.Sprintf("ReadWait 开始执行")
 	})
-
+	fmt.Println(this.buf)
 	cpos := this.cseq.get()
 	ppos := this.pseq.get()
 
@@ -445,7 +445,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 			})
 			return nil, io.EOF
 		}
-
+		this.cwait++
 		this.ccond.Wait()
 	}
 	this.ccond.L.Unlock()
@@ -495,7 +495,7 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 	//    The number of bytes will NOT be len(p) but less than that.
 	if cpos < ppos {
 		this.cseq.set(cpos + 1)
-		this.buf[cpos] = nil
+		//this.buf[cpos] = nil
 		this.pcond.L.Lock()
 		this.pcond.Broadcast()
 		this.pcond.L.Unlock()
