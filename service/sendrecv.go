@@ -347,31 +347,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	/*if wrap {
-		if len(this.outtmp) < l {
-			this.outtmp = make([]byte, l)
-		}
 
-		n, err = msg.Encode(this.outtmp[0:])
-		if err != nil {
-			return 0, err
-		}
-
-		m, err = this.out.Write(this.outtmp[0:n])
-		if err != nil {
-			return m, err
-		}
-	} else {
-		n, err = msg.Encode(buf[0:])
-		if err != nil {
-			return 0, err
-		}
-
-		m, err = this.out.WriteCommit(n)
-		if err != nil {
-			return 0, err
-		}
-	}*/
 
 	this.outStat.increment(int64(m))
 

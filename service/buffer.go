@@ -330,6 +330,10 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				})
 				return total, err
 			}
+		}else{
+			this.pcond.L.Lock()
+			this.pcond.Broadcast()
+			this.pcond.L.Unlock()
 		}
 
 		if err != ErrBufferInsufficientData && err != nil {
