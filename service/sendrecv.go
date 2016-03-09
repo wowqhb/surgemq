@@ -344,7 +344,8 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	this.out.buf[start&this.out.mask] = ByteArray{bArray: buf}
+	index := start & this.out.mask
+	this.out.buf[index] = ByteArray{index: index, bArray: buf}
 	m, err = this.out.WriteCommit(n)
 	if err != nil {
 		return 0, err

@@ -68,6 +68,7 @@ func (this *sequence) set(seq int64) {
 }
 
 type ByteArray struct {
+	index  int64
 	bArray []byte
 }
 
@@ -77,7 +78,7 @@ type buffer struct {
 	//buf []byte
 	buf []ByteArray //环形buffer指针数组
 	//tmp []byte
-	tmp  []ByteArray //环形buffer指针数组--临时
+	//tmp  []ByteArray //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -269,7 +270,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		pstart := start & this.mask
 		//b__[len(b__)-1] = 0x1
-		this.buf[pstart] = ByteArray{bArray: b__}
+		this.buf[pstart] = ByteArray{index: pstart, bArray: b__}
 		/*if this.buf[pstart] == nil {
 			this.buf[pstart] = &ByteArray{bArray: b__}
 		} else {
