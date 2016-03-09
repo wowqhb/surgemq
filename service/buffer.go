@@ -75,9 +75,9 @@ type buffer struct {
 	id int64
 
 	//buf []byte
-	buf []ByteArray //环形buffer指针数组
+	buf []*ByteArray //环形buffer指针数组
 	//tmp []byte
-	tmp  []ByteArray //环形buffer指针数组--临时
+	tmp  []*ByteArray //环形buffer指针数组--临时
 	size int64
 	mask int64
 
@@ -126,7 +126,7 @@ func newBuffer(size int64) (*buffer, error) {
 
 	return &buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
-		buf:            make([]ByteArray, size),
+		buf:            make([]*ByteArray, size),
 		size:           size,
 		mask:           size - 1,
 		pseq:           newSequence(),
@@ -269,7 +269,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		pstart := start & this.mask
 		//b__[len(b__)-1] = 0x1
-		this.buf[pstart] = ByteArray{bArray: b__}
+		this.buf[pstart] = &ByteArray{bArray: b__}
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
 			return total, err
