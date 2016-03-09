@@ -42,9 +42,9 @@ func (r timeoutReader) Read(b []byte) (int, error) {
 
 // receiver() reads data from the network, and writes the data into the incoming buffer
 func (this *service) receiver() {
-	Log.Infoc(func() string {
+	/*Log.Debugc(func() string {
 		return fmt.Sprintf("(%s) receiver开始", this.cid())
-	})
+	})*/
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
@@ -98,11 +98,11 @@ func (this *service) receiver() {
 				}
 
 				continue
-			} else {
-				Log.Infoc(func() string {
+			} /*else {
+				Log.Debugc(func() string {
 					return fmt.Sprintf("(%s)向ringbuffer些数据成功！", this.cid())
 				})
-			}
+			}*/
 		}
 
 	//case *websocket.Conn:
@@ -117,9 +117,9 @@ func (this *service) receiver() {
 
 // sender() writes data from the outgoing buffer to the network
 func (this *service) sender() {
-	Log.Infoc(func() string {
+	/*Log.Debugc(func() string {
 		return fmt.Sprintf("(%s) sender开始", this.cid())
-	})
+	})*/
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {
@@ -205,9 +205,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-	Log.Infoc(func() string {
+	/*Log.Debugc(func() string {
 		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
-	})
+	})*/
 	_, err = msg.Decode(b)
 	if err != nil {
 		Log.Errorc(func() string {
@@ -215,9 +215,9 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 		})
 		return nil, 0, err
 	}
-	Log.Infoc(func() string {
+	/*Log.Debugc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
-	})
+	})*/
 	//fmt.Println("this.in.readwait=", msg.Len())
 	return msg, len(b), err
 }

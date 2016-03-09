@@ -39,9 +39,9 @@ var (
 
 // processor() reads messages from the incoming buffer and processes them
 func (this *service) processor() {
-	Log.Infoc(func() string {
+	/*Log.Debugc(func() string {
 		return fmt.Sprintf("(%s) processor开始", this.cid())
-	})
+	})*/
 	defer func() {
 		// Let's recover from panic
 		if r := recover(); r != nil {

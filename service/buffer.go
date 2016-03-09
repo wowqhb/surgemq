@@ -284,7 +284,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer func() {
 		Log.Debugc(func() string {
-			return fmt.Sprintf("WriteTo::::defer::::close")
+			return fmt.Sprintf("WriteTo->defer->close")
 		})
 		this.Close()
 	}()
@@ -292,7 +292,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	total := int64(0)
 
 	for {
-		//Log.Infoc(func() string {
+		//Log.Debugc(func() string {
 		//	return fmt.Sprintf("WriteTo发送开始")
 		//})
 		if this.isDone() {
@@ -342,9 +342,9 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 			})
 			return total, err
 		}
-		Log.Infoc(func() string {
+		/*Log.Debugc(func() string {
 			return fmt.Sprintf("WriteTo发送完成")
-		})
+		})*/
 	}
 }
 
