@@ -262,7 +262,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, err
 		}
 		pstart := start & this.mask
-
+		b__[len(b__)-1] = 0x1
 		this.buf[pstart] = ByteArray{bArray: b__}
 		_, err = this.WriteCommit(int(total) /*n*/)
 		if err != nil {
