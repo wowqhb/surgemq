@@ -200,6 +200,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		cnt := 1
 		// Let's read enough bytes to get the message header (msg type, remaining length)
 		for {
+			if this.isDone() {
+				return total, io.EOF
+			}
 			// If we have read 5 bytes and still not done, then there's a problem.
 			if cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
@@ -208,9 +211,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			//fmt.Println(b)
 			if err != nil {
-				if this.isDone() {
-					return total, err
-				}
 				time.Sleep(2 * time.Millisecond)
 				continue
 			}
@@ -241,7 +241,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			if err != nil {
 				if this.isDone() {
-					return total, err
+					return total, io.EOF
 				}
 				Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
