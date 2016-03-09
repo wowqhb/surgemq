@@ -165,6 +165,8 @@ func (this *service) sender() {
 // peekMessageSize() reads, but not commits, enough bytes to determine the size of
 // the next message and returns the type and size.
 func (this *service) peekMessageSize() (message.Message, int, error) {
+	fmt.Println("this.in.buf=", this.in.buf)
+	fmt.Println("this.out.buf=", this.out.buf)
 	Log.Infoc(func() string {
 		return fmt.Sprintf("(%s) peekMessageSize开始", this.cid())
 	})

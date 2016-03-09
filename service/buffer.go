@@ -428,7 +428,6 @@ func (this *buffer) ReadWait() ([]byte, error) {
 	Log.Debugc(func() string {
 		return fmt.Sprintf("ReadWait 开始执行")
 	})
-	fmt.Println(this.buf)
 	cpos := this.cseq.get()
 	ppos := this.pseq.get()
 
