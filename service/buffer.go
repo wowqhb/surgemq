@@ -187,7 +187,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			fmt.Println("ReadFrom isDone!")
 			return total, io.EOF
 		}
-		b := make([]byte, int64(5))
+		b := make([]byte, int64(3))
 		n, err := r.Read(b[0:1])
 		if err != nil {
 			return total, err
