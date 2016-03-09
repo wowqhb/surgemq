@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"github.com/spf13/cobra"
 	"io"
 	"sync"
 	"sync/atomic"
