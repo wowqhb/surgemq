@@ -145,11 +145,9 @@ func (this *service) sender() {
 			_, err := this.out.WriteTo(conn)
 
 			if err != nil {
-				if err != io.EOF {
-					Log.Errorc(func() string {
-						return fmt.Sprintf("(%s) error writing data: %v", this.cid(), err)
-					})
-				}
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s)Error Sender  writing data: %v", this.cid(), err)
+				})
 				return
 			}
 		}
@@ -173,7 +171,6 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	var (
 		b   []byte
 		err error
-		cnt int = 2
 	)
 
 	if this.in == nil {
@@ -185,7 +182,7 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	}
 
 	// Peek cnt bytes from the input buffer.
-	b, err = this.in.ReadWait(cnt)
+	b, err = this.in.ReadWait()
 	if err != nil {
 		Log.Errorc(func() string {
 			return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure:%v", this.cid(), err)
