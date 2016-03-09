@@ -385,7 +385,7 @@ func (this *buffer) Read(p []byte) (int, error) {
 	}
 }
 
-func (this *buffer) Write(p []byte) (int, error) {
+/*func (this *buffer) Write(p []byte) (int, error) {
 	if this.isDone() {
 		return 0, io.EOF
 	}
@@ -407,7 +407,7 @@ func (this *buffer) Write(p []byte) (int, error) {
 	this.ccond.L.Unlock()
 
 	return len(p), nil
-}
+}*/
 
 // Description below is copied completely from bufio.Peek()
 //   http://golang.org/pkg/bufio/#Reader.Peek
@@ -569,20 +569,20 @@ func (this *buffer) ReadCommit(n int) (int, error) {
 // 1. the slice pointing to the location in the buffer to be filled
 // 2. a boolean indicating whether the bytes available wraps around the ring
 // 3. any errors encountered. If there's error then other return values are invalid
-func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
-	start, _, err := this.waitForWriteSpace(n /*n*/)
-	if err != nil {
-		return nil, false, err
-	}
-
-	pstart := start & this.mask
-	/*if pstart+int64(cnt) > this.size {
-		return this.buf[pstart:], true, nil
-	}
-
-	return this.buf[pstart : pstart+int64(cnt)], false, nil*/
-	return this.buf[pstart].bArray, false, nil
+/*func (this *buffer) WriteWait(n int) ([]byte, bool, error) {
+start, _, err := this.waitForWriteSpace(n */ /*n*/ /*)
+if err != nil {
+	return nil, false, err
 }
+
+pstart := start & this.mask
+*/ /*if pstart+int64(cnt) > this.size {
+	return this.buf[pstart:], true, nil
+}
+
+return this.buf[pstart : pstart+int64(cnt)], false, nil*/ /*
+	return this.buf[pstart].bArray, false, nil
+}*/
 
 func (this *buffer) WriteCommit(n int) (int, error) {
 	start, _, err := this.waitForWriteSpace(n /*n*/)

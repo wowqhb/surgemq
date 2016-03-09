@@ -91,7 +91,6 @@ func (this *service) processor() {
 		this.inStat.increment(int64(n))
 
 		// 5. Process the read message
-		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS==>",msg.Name())
 		err = this.processIncoming(msg)
 
 		if err != nil {
