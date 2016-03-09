@@ -250,9 +250,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 		fmt.Println("b=", b)
 		fmt.Println("b__=", b__)
-		if nlen == int64(0) {
+		/*if nlen == int64(0) {
 			return total, err
-		}
+		}*/
 
 		//if this.buf[pstart] != nil {
 		//	return total, errors.New("ringbuffer is not nil,it is readonly now")
