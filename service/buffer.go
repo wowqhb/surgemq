@@ -324,7 +324,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("this.ReadPeek debug(%s)", err)
 				})
-				time.Second(100 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 			Log.Errorc(func() string {
@@ -466,7 +466,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 			Log.Debugc(func() string {
 				return fmt.Sprintf("ReadWait::>this.isDone()==true")
 			})
-			return nil, 0, io.EOF
+			return nil, io.EOF
 		}
 		this.cwait++
 		this.ccond.Wait()
@@ -488,7 +488,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 		return this.tmp[:n], nil
 	}*/
 	array := this.buf[cindex].bArray
-	if cpos > this.buf[cindex] {
+	if cpos > this.buf[cindex].index {
 		return nil, ErrBufferNotNewData
 	}
 	return array, nil
