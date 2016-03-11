@@ -145,13 +145,13 @@ func (this *service) sender() {
 			_, err := this.out.WriteTo(conn)
 
 			if err != nil {
-				/*if err == ErrBufferNotNewData {
+				if err == ErrBufferNotNewData {
 					Log.Debugc(func() string {
 						return fmt.Sprintf("sender debug(%s)", err)
 					})
 					time.Sleep(10 * time.Millisecond)
 					continue
-				}*/
+				}
 				Log.Errorc(func() string {
 					return fmt.Sprintf("(%s)Error Sender  writing data: %v", this.cid(), err)
 				})
