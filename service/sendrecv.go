@@ -177,56 +177,61 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 	//Log.Infoc(func() string {
 	//	return fmt.Sprintf("(%s) peekMessageSize开始", this.cid())
 	//})
-	if this.isDone() {
-		return nil, 0, io.EOF
-	}
-	var (
-		b   []byte
-		err error
-	)
+	for {
 
-	if this.in == nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize this.in is nil", this.cid())
-		})
-		err = ErrBufferNotReady
-		return nil, 0, err
-	}
+		if this.isDone() {
+			return nil, 0, io.EOF
+		}
+		var (
+			b   []byte
+			err error
+		)
 
-	// Peek cnt bytes from the input buffer.
-	b, err = this.in.ReadWait()
-	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure:%v", this.cid(), err)
-		})
-		return nil, 0, err
+		if this.in == nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) peekMessageSize this.in is nil", this.cid())
+			})
+			err = ErrBufferNotReady
+			return nil, 0, err
+		}
+
+		// Peek cnt bytes from the input buffer.
+		b, err = this.in.ReadWait()
+		if err != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) peekMessageSize this.in.ReadWait falure:%v", this.cid(), err)
+			})
+			return nil, 0, err
+		}
+		if len(b) > 0 {
+			//total := int(remlen) + 1 + m
+			mtype := message.MessageType((b)[0] >> 4)
+			//return mtype, total, err
+			var msg message.Message
+			msg, err = mtype.New()
+			if err != nil {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) peekMessageSize mtype.New() falure:%v", this.cid(), err)
+				})
+				return nil, 0, err
+			}
+			/*Log.Debugc(func() string {
+				return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
+			})*/
+			_, err = msg.Decode(b)
+			if err != nil {
+				Log.Errorc(func() string {
+					return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure:%v", this.cid(), err)
+				})
+				return nil, 0, err
+			}
+			/*Log.Debugc(func() string {
+				return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
+			})*/
+			//fmt.Println("this.in.readwait=", msg.Len())
+			return msg, len(b), err
+		}
 	}
-	//total := int(remlen) + 1 + m
-	mtype := message.MessageType((b)[0] >> 4)
-	//return mtype, total, err
-	var msg message.Message
-	msg, err = mtype.New()
-	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize mtype.New() falure:%v", this.cid(), err)
-		})
-		return nil, 0, err
-	}
-	/*Log.Debugc(func() string {
-		return fmt.Sprintf("(%s) 开始创建对象(%s)", this.cid(), msg.Name())
-	})*/
-	_, err = msg.Decode(b)
-	if err != nil {
-		Log.Errorc(func() string {
-			return fmt.Sprintf("(%s) peekMessageSize msg.Decode falure:%v", this.cid(), err)
-		})
-		return nil, 0, err
-	}
-	/*Log.Debugc(func() string {
-		return fmt.Sprintf("(%s) peekMessageSize结束(%s)", this.cid(), msg.Name())
-	})*/
-	//fmt.Println("this.in.readwait=", msg.Len())
-	return msg, len(b), err
 }
 
 // peekMessage() reads a message from the buffer, but the bytes are NOT committed.

@@ -235,8 +235,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 			if times > 100 {
 				return total, io.EOF
-			}else {
-				times=0
+			} else {
+				times = 0
 			}
 			times++
 			tmpm := remlen_64 - nlen
@@ -257,7 +257,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				})
 				time.Sleep(5 * time.Millisecond)
 				continue*/
-				return total,err
+				return total, err
 			}
 			b__ = append(b__, b_[0:]...)
 			nlen += int64(n)
@@ -497,7 +497,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 	}*/
 	array := this.buf[cindex].bArray
 	if cpos > this.buf[cindex].index {
-		return nil, ErrBufferNotNewData
+		array = make([]byte, 0)
 	}
 	return array, nil
 }
