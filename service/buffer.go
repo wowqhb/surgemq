@@ -230,14 +230,15 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		b__ := make([]byte, 0, total)
 		b__ = append(b__, b[0:1+m]...)
 		nlen := int64(0)
-		times := int64(0)
+		times := 0
 		for nlen < remlen_64 {
 			if this.isDone() {
 				return total, io.EOF
 			}
-			if times > 1000 {
-				//return total, io.EOF
-				this.Close()
+			if times > 100 {
+				return total, io.EOF
+			}else {
+				times=0
 			}
 			times++
 			tmpm := remlen_64 - nlen
