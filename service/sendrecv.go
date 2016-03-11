@@ -230,6 +230,8 @@ func (this *service) peekMessageSize() (message.Message, int, error) {
 			})*/
 			//fmt.Println("this.in.readwait=", msg.Len())
 			return msg, len(b), err
+		} else {
+			time.Sleep(2 * time.Microsecond)
 		}
 	}
 }
