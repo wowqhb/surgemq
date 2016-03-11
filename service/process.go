@@ -68,9 +68,9 @@ func (this *service) processor() {
 		//     this.rmu.Lock()
 
 		msg, n, err := this.peekMessageSize()
-		Log.Debugc(func() string {
-			return fmt.Sprintf("(%s) processor===>>>message(%v)", this.cid(), msg)
-		})
+		//Log.Debugc(func() string {
+		//	return fmt.Sprintf("(%s) processor===>>>message(%v)", this.cid(), msg)
+		//})
 		if err != nil {
 			if err == ErrBufferNotNewData {
 				Log.Debugc(func() string {
