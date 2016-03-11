@@ -124,8 +124,7 @@ func newBuffer(size int64) (*buffer, error) {
 	//	fmt.Printf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
 	//	return nil, fmt.Errorf("Size must at least be %d. Try %d.", 2*readblocksize, 2*readblocksize)
 	//}
-
-	return &buffer{
+	_buffer := buffer{
 		id:             atomic.AddInt64(&bufcnt, 1),
 		buf:            make([]ByteArray, size),
 		size:           size,
@@ -138,7 +137,11 @@ func newBuffer(size int64) (*buffer, error) {
 		ccond:          sync.NewCond(new(sync.Mutex)),
 		cwait:          0,
 		pwait:          0,
-	}, nil
+	}
+	for i := 0; i < size; i++ {
+		_buffer.buf[i] = &ByteArray{index: -1, bArray: make([]byte, 1)}
+	}
+	return &_buffer, nil
 }
 
 func (this *buffer) ID() int64 {
