@@ -21,7 +21,6 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 var (
@@ -253,12 +252,12 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			n, err = r.Read(b_[0:])
 
 			if err != nil {
-				Log.Errorc(func() string {
+				/*Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
 				})
 				time.Sleep(5 * time.Millisecond)
-				continue
-				//return total,err
+				continue*/
+				return total,err
 			}
 			b__ = append(b__, b_[0:]...)
 			nlen += int64(n)
