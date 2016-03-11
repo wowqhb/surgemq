@@ -330,13 +330,13 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 		p, err := this.ReadPeek()
 		if err != nil {
-			if err == ErrBufferNotNewData {
+			/*if err == ErrBufferNotNewData {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("this.ReadPeek debug(%s)", err)
 				})
 				time.Sleep(100 * time.Millisecond)
 				continue
-			}
+			}*/
 			Log.Errorc(func() string {
 				return fmt.Sprintf("this.ReadPeek error(%s)", err)
 			})
