@@ -139,7 +139,7 @@ func newBuffer(size int64) (*buffer, error) {
 		pwait:          0,
 	}
 	for i := int64(0); i < size; i++ {
-		_buffer.buf[i] = &ByteArray{index: -1, bArray: make([]byte, int64(1))}
+		_buffer.buf[i] = &ByteArray{index: -1, bArray: make([]byte, 1)}
 	}
 	return &_buffer, nil
 }
