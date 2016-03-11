@@ -457,9 +457,9 @@ func (this *buffer) ReadPeek() ([]byte, error) {
 // wait until there's enough. This differs from ReadPeek or Readin that Peek will
 // return whatever is available and won't wait for full count.
 func (this *buffer) ReadWait() ([]byte, error) {
-	Log.Debugc(func() string {
-		return fmt.Sprintf("ReadWait 开始执行")
-	})
+	//Log.Debugc(func() string {
+	//	return fmt.Sprintf("ReadWait 开始执行")
+	//})
 	cpos := this.cseq.get()
 	ppos := this.pseq.get()
 
@@ -474,6 +474,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 			Log.Debugc(func() string {
 				return fmt.Sprintf("ReadWait::>this.isDone()==true")
 			})
+			this.ccond.L.Unlock()
 			return nil, io.EOF
 		}
 		this.cwait++
