@@ -42,7 +42,7 @@ var (
 	ErrInvalidSubscriber      error = errors.New("service: Invalid subscriber")
 	ErrBufferNotReady         error = errors.New("service: buffer is not ready")
 	ErrBufferInsufficientData error = errors.New("service: buffer has insufficient data.")
-	//ErrBufferNotNewData       error = errors.New("service:buffer has not new data.") //2016年3月9日添加
+	ErrBufferNotNewData       error = errors.New("service:buffer has not new data.") //2016年3月9日添加
 )
 
 const (

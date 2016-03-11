@@ -499,8 +499,7 @@ func (this *buffer) ReadWait() ([]byte, error) {
 	}*/
 	array := this.buf[cindex].bArray
 	if cpos > this.buf[cindex].index {
-		//return nil, ErrBufferNotNewData
-		return nil, io.EOF
+		return nil, ErrBufferNotNewData
 	}
 	return array, nil
 }

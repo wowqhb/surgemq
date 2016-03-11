@@ -72,13 +72,13 @@ func (this *service) processor() {
 		//	return fmt.Sprintf("(%s) processor===>>>message(%v)", this.cid(), msg)
 		//})
 		if err != nil {
-			/*if err == ErrBufferNotNewData {
+			if err == ErrBufferNotNewData {
 				Log.Debugc(func() string {
 					return fmt.Sprintf("(%s) Not new data.", this.cid())
 				})
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 				continue
-			}*/
+			}
 
 			if err == io.EOF {
 				Log.Debugc(func() string {
