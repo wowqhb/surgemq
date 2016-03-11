@@ -122,17 +122,17 @@ func (this *service) sender() {
 	})*/
 	defer func() {
 		// Let's recover from panic
-		/*if r := recover(); r != nil {
+		if r := recover(); r != nil {
 			Log.Errorc(func() string {
 				return fmt.Sprintf("(%s) Recovering from panic: %v", this.cid(), r)
 			})
-		}*/
+		}
 
 		this.wgStopped.Done()
 
-		/*og.Debugc(func() string {
+		Log.Debugc(func() string {
 			return fmt.Sprintf("(%s) Stopping sender", this.cid())
-		})*/
+		})
 	}()
 
 	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting sender", this.cid())})
