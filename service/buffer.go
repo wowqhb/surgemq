@@ -263,8 +263,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_tmp := int64(remlen)
 		total_tmp := remlen_tmp + int64(1) + int64(m)
 
-		write_bytes = make([]byte, total_tmp)
-		write_bytes = append(write_bytes[0:], b[0:max_cnt+1]...)
+		write_bytes = make([]byte, 0, total_tmp)
+		write_bytes = append(write_bytes, b[0:max_cnt+1]...)
 		fmt.Println("write_bytes(1):==>>", write_bytes)
 		ttime := 100
 		if remlen_tmp > 0 {
@@ -287,7 +287,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				ttime = 100
 				if n > 0 {
 					leatnum--
-					write_bytes = append(write_bytes[int64(max_cnt)+remlen_tmp-leatnum:], b_tmp[0:1]...)
+					write_bytes = append(write_bytes, b_tmp[0:1]...)
 				}
 			}
 		}
