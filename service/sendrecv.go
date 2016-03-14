@@ -15,7 +15,6 @@
 package service
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -304,7 +303,7 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	//		return m, err
 	//	}
 	//} else {
-	buf = make([]int, l)
+	buf = make([]byte, l)
 	n, err = msg.Encode(buf[0:])
 	if err != nil {
 		return 0, err

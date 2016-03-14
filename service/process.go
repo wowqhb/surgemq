@@ -71,8 +71,7 @@ func (this *service) processor() {
 			})
 			return
 		}
-		mtype := message.MessageType(*p[0] >> 4)
-		total := len(*p)
+		mtype := message.MessageType((*p)[0] >> 4)
 
 		msg, err := mtype.New()
 		n, err := msg.Decode(*p)
