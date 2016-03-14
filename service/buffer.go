@@ -275,6 +275,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				if err != nil {
 					ttime--
 					if err == io.EOF && ttime > 0 {
+						fmt.Println(ttime)
 						time.Sleep(1 * time.Microsecond)
 						continue
 					}
