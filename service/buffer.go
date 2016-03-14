@@ -265,7 +265,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		write_bytes = make([]byte, total_tmp)
 		write_bytes = append(write_bytes, b[0:max_cnt+1]...)
-
+		fmt.Println("write_bytes(1):==>>", write_bytes)
 		ttime := 100
 		if remlen_tmp > 0 {
 			leatnum := remlen_tmp
@@ -291,7 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				}
 			}
 		}
-		fmt.Println("write_bytes:==>>", write_bytes)
+		fmt.Println("write_bytes(2):==>>", write_bytes)
 		ok := this.WriteBuffer(&write_bytes)
 
 		if !ok {
