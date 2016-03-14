@@ -268,13 +268,13 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		ttime := 100
 		if remlen_tmp > 0 {
 			leatnum := remlen_tmp
-			for leatnum > 0 && ttime > 0 {
+			for leatnum > 0 {
 				b_tmp := make([]byte, 1)
 
 				n, err = r.Read(b_tmp)
 				if err != nil {
-					if err == io.EOF {
-						ttime--
+					ttime--
+					if err == io.EOF && ttime > 0 {
 						time.Sleep(1 * time.Microsecond)
 						continue
 					}
