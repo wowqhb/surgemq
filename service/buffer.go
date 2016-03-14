@@ -182,9 +182,12 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
 	for {
+		if this.isDone() {
+			return nil, false
+		}
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
-			fmt.Println("read wait")
+			//fmt.Println("read wait")
 			this.pcond.Broadcast()
 			//this.ccond.Wait()
 			time.Sleep(2 * time.Millisecond)
@@ -214,6 +217,9 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
 	for {
+		if this.isDone() {
+			return nil, false
+		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			fmt.Println("write wait")
