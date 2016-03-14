@@ -22,6 +22,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -185,7 +186,8 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		if readIndex >= writeIndex {
 			fmt.Println("read wait")
 			this.pcond.Broadcast()
-			this.ccond.Wait()
+			//this.ccond.Wait()
+			time.Sleep(2 * time.Millisecond)
 		} else {
 			break
 		}
