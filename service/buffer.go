@@ -261,7 +261,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		write_bytes = make([]byte, 0, total_tmp)
 		write_bytes = append(write_bytes, b[0:m+1]...)
-		fmt.Println("write_bytes(0):==>>", write_bytes)
 		nlen := int64(0)
 		times := 0
 		cnt_ := 32
@@ -296,12 +295,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return total, err
 			}
 			write_bytes = append(write_bytes, b_[0:]...)
-			fmt.Println("write_bytes(1):==>>", write_bytes)
 			nlen += int64(n)
 			total += int64(n)
 		}
-
-		fmt.Println("write_bytes(2):==>>", write_bytes)
 
 		ok := this.WriteBuffer(&write_bytes)
 
