@@ -38,8 +38,7 @@ type stat struct {
 }
 
 func (this *stat) increment(n int64) {
-	//atomic.AddInt64(&this.bytes, n)
-	atomic.AddInt64(&this.bytes, 1)
+	atomic.AddInt64(&this.bytes, n)
 	atomic.AddInt64(&this.msgs, 1)
 }
 
@@ -121,9 +120,9 @@ type service struct {
 	intmp  []byte
 	outtmp []byte
 
-	subs  []interface{}
-	qoss  []byte
-	rmsgs []*message.PublishMessage
+	//   subs  []interface{}
+	//   qoss  []byte
+	//   rmsgs []*message.PublishMessage
 }
 
 func (this *service) start(client_id string) error {
@@ -227,6 +226,7 @@ func (this *service) stop() {
 	// Close the network connection
 	if this.conn != nil {
 		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
+		ClientMapCleanProcessor <- this.sess.ID()
 		this.conn.Close()
 	}
 
@@ -278,7 +278,6 @@ func (this *service) stop() {
 	this.conn = nil
 	this.in = nil
 	this.out = nil
-	ClientMap[this.sess.ID()] = nil
 }
 
 func (this *service) publish(msg *message.PublishMessage, onComplete OnCompleteFunc) error {

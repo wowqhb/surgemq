@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"github.com/surgemq/message"
 	"net"
+	//   "sync"
 )
 
 var (
 	PendingQueue = make([]*message.PublishMessage, 65536, 65536)
 	//   PendingProcessor = make(chan *message.PublishMessage, 65536)
 
-	OfflineTopicQueue          = make(map[string][][]byte)
+	OfflineTopicMap            = make(map[string]*OfflineTopicQueue)
 	OfflineTopicQueueProcessor = make(chan *message.PublishMessage, 2048)
 	OfflineTopicCleanProcessor = make(chan string, 2048)
 
@@ -27,7 +28,7 @@ var (
 	PkgId          = uint16(1)
 
 	NewMessagesQueue      = make(chan *message.PublishMessage, 2048)
-	SubscribersSliceQueue = make(chan []interface{}, 2048)
+	SubscribersSliceQueue = make(chan *[]interface{}, 2048)
 
 	Max_message_queue int
 )
@@ -37,19 +38,90 @@ type ClientHash struct {
 	Conn *net.Conn
 }
 
+// 定义一个离线消息队列的结构体，保存一个二维byte数组和一个位置
+type OfflineTopicQueue struct {
+	q      [][]byte
+	pos    int
+	length int
+	clean  bool
+	//   lock  *sync.RWMutex
+}
+
+func NewOfflineTopicQueue(length int) (q *OfflineTopicQueue) {
+	q = &OfflineTopicQueue{
+		make([][]byte, length, length),
+		0,
+		length,
+		true,
+		//     new(sync.RWMutex),
+	}
+
+	return q
+}
+
+// 向队列中添加消息
+//NOTE 因为目前是在channel中操作，所以无需加锁。如果需要并发访问，则需要加锁了。
+func (this *OfflineTopicQueue) Add(msg_bytes []byte) {
+	//   this.lock.Lock()
+	this.q[this.pos] = msg_bytes
+	this.pos++
+
+	if this.pos >= this.length {
+		this.pos = 0
+	}
+
+	if this.clean {
+		this.clean = false
+	}
+	//   this.lock.Unlock()
+}
+
+// 清除队列中已有消息
+func (this *OfflineTopicQueue) Clean() {
+	//   this.lock.Lock()
+	this.q = nil
+	this.q = make([][]byte, this.length, this.length)
+	this.pos = 0
+	this.clean = true
+	//   this.lock.Unlock()
+}
+
+func (this *OfflineTopicQueue) GetAll() (msg_bytes [][]byte) {
+	//   this.lock.RLock()
+	if this.clean {
+		return nil
+	} else {
+		msg_bytes = this.q[this.pos:this.length]
+		msg_bytes = append(msg_bytes, this.q[0:this.pos]...)
+		return msg_bytes
+	}
+	//   this.lock.RUnlock()
+}
+
 func init() {
 	go func() {
 		for i := 0; i < 2048; i++ {
-			SubscribersSliceQueue <- make([]interface{}, 1, 1)
+			sub_p := make([]interface{}, 1, 1)
+			select {
+			case SubscribersSliceQueue <- &sub_p:
+			default:
+				sub_p = nil
+				return
+			}
 		}
 	}()
 
 	go func() {
-		for {
+		for i := 0; i < 2048; i++ {
 			tmp_msg := message.NewPublishMessage()
-			tmp_msg.SetPacketId(GetRandPkgId())
 			tmp_msg.SetQoS(message.QosAtLeastOnce)
-			NewMessagesQueue <- tmp_msg
+
+			select {
+			case NewMessagesQueue <- tmp_msg:
+			default:
+				tmp_msg = nil
+				return
+			}
 		}
 	}()
 
@@ -57,33 +129,33 @@ func init() {
 		for {
 			select {
 			case topic := <-OfflineTopicGetProcessor:
-				OfflineTopicGetChannel <- OfflineTopicQueue[topic]
+				q := OfflineTopicMap[topic]
+				if q == nil {
+					OfflineTopicGetChannel <- nil
+				} else {
+					OfflineTopicGetChannel <- q.GetAll()
+				}
 			case topic := <-OfflineTopicCleanProcessor:
 				Log.Debugc(func() string {
 					return fmt.Sprintf("clean offlie topic queue: %s", topic)
 				})
 
-				OfflineTopicQueue[topic] = nil
-			case msg := <-OfflineTopicQueueProcessor:
-				topic := string(msg.Topic())
-				new_msg_queue := append(OfflineTopicQueue[topic], msg.Payload())
-				length := len(new_msg_queue)
-				if length > Max_message_queue {
-					Log.Debugc(func() string {
-						return fmt.Sprintf("add offline message to the topic: %s, and remove %d old messages.",
-							topic,
-							length-Max_message_queue,
-						)
-					})
-
-					OfflineTopicQueue[topic] = new_msg_queue[length-Max_message_queue:]
-				} else {
-					Log.Debugc(func() string {
-						return fmt.Sprintf("add offline message to the topic: %s", topic)
-					})
-
-					OfflineTopicQueue[topic] = new_msg_queue
+				q := OfflineTopicMap[topic]
+				if q != nil {
+					q.Clean()
 				}
+			case msg := <-OfflineTopicQueueProcessor:
+				//         _ = msg
+				topic := string(msg.Topic())
+				q := OfflineTopicMap[topic]
+				if q == nil {
+					q = NewOfflineTopicQueue(Max_message_queue)
+					OfflineTopicMap[topic] = q
+				}
+				q.Add(msg.Payload())
+				Log.Debugc(func() string {
+					return fmt.Sprintf("add offline message to the topic: %s", topic)
+				})
 
 			case client := <-ClientMapProcessor:
 				client_id := client.Name

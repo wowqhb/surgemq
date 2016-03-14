@@ -42,7 +42,6 @@ var (
 	ErrInvalidSubscriber      error = errors.New("service: Invalid subscriber")
 	ErrBufferNotReady         error = errors.New("service: buffer is not ready")
 	ErrBufferInsufficientData error = errors.New("service: buffer has insufficient data.")
-	ErrBufferNotNewData       error = errors.New("service:buffer has not new data.") //2016年3月9日添加
 )
 
 const (
@@ -239,25 +238,20 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 		return err
 	}
 
-	//	if msg.Retain() {
-	//		if err = this.topicsMgr.Retain(msg); err != nil {
-	//			Log.Errorc(func() string{ return fmt.Sprintf("Error retaining message: %v", err)})
-	//		}
-	//	}
-
 	if err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &this.subs, &this.qoss); err != nil {
 		//   if err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &this.subs, &this.qoss); err != nil {
 		return err
 	}
 
-	//   msg.SetRetain(false)
+	subs := _get_temp_subs()
+	defer _return_temp_subs(subs)
+	//   defer _return_tmp_msg(msg)
 
-	subs := <-SubscribersSliceQueue
 	Log.Debugc(func() string {
-		return fmt.Sprintf("(server) Publishing to topic %s and %d subscribers", string(msg.Topic()), len(subs))
+		return fmt.Sprintf("(server) Publishing to topic %s and %d subscribers", string(msg.Topic()), len(*subs))
 	})
 
-	for _, s := range subs {
+	for _, s := range *subs {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
@@ -300,9 +294,9 @@ func (this *Server) Close() error {
 }
 
 // HandleConnection is for the broker to handle an incoming connection from a client
-func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
+func (this *Server) handleConnection(c io.Closer) (err error) {
 	if c == nil {
-		return nil, ErrInvalidConnectionType
+		return ErrInvalidConnectionType
 	}
 
 	defer func() {
@@ -313,12 +307,12 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 
 	err = this.checkConfiguration()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	conn, ok := c.(net.Conn)
 	if !ok {
-		return nil, ErrInvalidConnectionType
+		return ErrInvalidConnectionType
 	}
 
 	// To establish a connection, we must
@@ -346,7 +340,7 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 			resp.SetSessionPresent(false)
 			writeMessage(conn, resp)
 		}
-		return nil, err
+		return err
 	}
 
 	// Authenticate the user, if error, return error and exit
@@ -357,14 +351,14 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 		resp.SetReturnCode(message.ErrBadUsernameOrPassword)
 		resp.SetSessionPresent(false)
 		writeMessage(conn, resp)
-		return nil, err
+		return err
 	}
 
 	if req.KeepAlive() == 0 {
 		req.SetKeepAlive(minKeepAlive)
 	}
 
-	svc = &service{
+	svc := &service{
 		id:     atomic.AddUint64(&gsvcid, 1),
 		client: false,
 
@@ -379,18 +373,18 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	}
 
 	c_id := string(req.ClientId())
-	c_hash := &ClientHash{Name: c_id, Conn: &conn}
-	ClientMapProcessor <- c_hash
+	c_hash := ClientHash{Name: c_id, Conn: &conn}
+	ClientMapProcessor <- &c_hash
 
 	err = this.getSession(svc, req, resp)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp.SetReturnCode(message.ConnectionAccepted)
 
 	if err = writeMessage(c, resp); err != nil {
-		return nil, err
+		return err
 	}
 
 	svc.inStat.increment(int64(req.Len()))
@@ -398,7 +392,7 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 
 	if err := svc.start(c_id); err != nil {
 		svc.stop()
-		return nil, err
+		return err
 	}
 
 	//this.mu.Lock()
@@ -409,7 +403,7 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 		return fmt.Sprintf("client %s connected successfully.", c_id)
 	})
 
-	return svc, nil
+	return nil
 }
 
 func (this *Server) checkConfiguration() error {
