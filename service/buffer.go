@@ -180,10 +180,14 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	p = nil
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
-	for readIndex >= writeIndex {
-		this.pcond.Broadcast()
-		this.ccond.Wait()
+	for {
 		writeIndex = this.GetCurrentWriteIndex()
+		if readIndex >= writeIndex {
+			this.pcond.Broadcast()
+			this.ccond.Wait()
+		} else {
+			break
+		}
 	}
 	index := readIndex & this.mask //替代求模
 	p = this.buf[index]
@@ -206,10 +210,15 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	ok = false
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
-	for writeIndex-readIndex >= this.size {
-		this.ccond.Broadcast()
-		this.pcond.Wait()
+	for {
 		readIndex = this.GetCurrentReadIndex()
+		if writeIndex-readIndex >= this.size {
+			this.ccond.Broadcast()
+			this.pcond.Wait()
+		} else {
+			break
+		}
+
 	}
 	index := writeIndex & this.mask //替代求模
 	this.buf[index] = in
