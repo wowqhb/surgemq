@@ -63,21 +63,20 @@ func (this *service) processor() {
 	for {
 		// 1. Find out what message is next and the size of the message
 		//     this.rmu.Lock()
-		mtype, total, err := this.peekMessageSize()
-		if err != nil {
-			if err == io.EOF {
-				Log.Debugc(func() string {
-					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
-				})
-			} else {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error peeking next message size: %v", this.cid(), err)
-				})
-			}
+
+		p, ok := this.in.ReadBuffer()
+		if !ok {
+			Log.Debugc(func() string {
+				return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
+			})
 			return
 		}
+		mtype := message.MessageType(*p[0] >> 4)
+		total := len(*p)
 
-		msg, n, err := this.peekMessage(mtype, total)
+		msg, err := mtype.New()
+		n, err := msg.Decode(*p)
+
 		if err != nil {
 			if err == io.EOF {
 				Log.Debugc(func() string {
@@ -109,7 +108,7 @@ func (this *service) processor() {
 		}
 
 		// 7. We should commit the bytes in the buffer so we can move on
-		_, err = this.in.ReadCommit(total)
+		/*_, err = this.in.ReadCommit(total)
 		if err != nil {
 			if err != io.EOF {
 				Log.Errorc(func() string {
@@ -117,10 +116,10 @@ func (this *service) processor() {
 				})
 			}
 			return
-		}
+		}*/
 
 		// 7. Check to see if done is closed, if so, exit
-		if this.isDone() && this.in.Len() == 0 {
+		if this.isDone() {
 			return
 		}
 

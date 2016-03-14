@@ -128,7 +128,7 @@ func (this *service) sender() {
 
 // peekMessageSize() reads, but not commits, enough bytes to determine the size of
 // the next message and returns the type and size.
-func (this *service) peekMessageSize() (message.MessageType, int, error) {
+/*func (this *service) peekMessageSize() (message.MessageType, int, error) {
 	var (
 		b   []byte
 		err error
@@ -176,11 +176,11 @@ func (this *service) peekMessageSize() (message.MessageType, int, error) {
 	mtype := message.MessageType(b[0] >> 4)
 
 	return mtype, total, err
-}
+}*/
 
 // peekMessage() reads a message from the buffer, but the bytes are NOT committed.
 // This means the buffer still thinks the bytes are not read yet.
-func (this *service) peekMessage(mtype message.MessageType, total int) (message.Message, int, error) {
+/*func (this *service) peekMessage(mtype message.MessageType, total int) (message.Message, int, error) {
 	var (
 		b    []byte
 		err  error
@@ -213,11 +213,11 @@ func (this *service) peekMessage(mtype message.MessageType, total int) (message.
 
 	n, err = msg.Decode(b)
 	return msg, n, err
-}
+}*/
 
 // readMessage() reads and copies a message from the buffer. The buffer bytes are
 // committed as a result of the read.
-func (this *service) readMessage(mtype message.MessageType, total int) (message.Message, int, error) {
+/*func (this *service) readMessage(mtype message.MessageType, total int) (message.Message, int, error) {
 	var (
 		b   []byte
 		err error
@@ -254,16 +254,15 @@ func (this *service) readMessage(mtype message.MessageType, total int) (message.
 
 	n, err = msg.Decode(b)
 	return msg, n, err
-}
+}*/
 
 // writeMessage() writes a message to the outgoing buffer
 func (this *service) writeMessage(msg message.Message) (int, error) {
 	var (
-		l    int = msg.Len()
-		m, n int
-		err  error
-		buf  []byte
-		wrap bool
+		l   int = msg.Len()
+		n   int
+		err error
+		buf []byte
 	)
 
 	if this.out == nil {
@@ -285,38 +284,40 @@ func (this *service) writeMessage(msg message.Message) (int, error) {
 	this.wmu.Lock()
 	defer this.wmu.Unlock()
 
-	buf, wrap, err = this.out.WriteWait(l)
+	//buf, wrap, err = this.out.WriteWait(l)
+	//if err != nil {
+	//	return 0, err
+	//}
+
+	//if wrap {
+	//	if len(this.outtmp) < l {
+	//		this.outtmp = make([]byte, l)
+	//	}
+	//
+	//	n, err = msg.Encode(this.outtmp[0:])
+	//	if err != nil {
+	//		return 0, err
+	//	}
+	//
+	//	m, err = this.out.Write(this.outtmp[0:n])
+	//	if err != nil {
+	//		return m, err
+	//	}
+	//} else {
+	buf = make([]int, l)
+	n, err = msg.Encode(buf[0:])
 	if err != nil {
 		return 0, err
 	}
 
-	if wrap {
-		if len(this.outtmp) < l {
-			this.outtmp = make([]byte, l)
-		}
-
-		n, err = msg.Encode(this.outtmp[0:])
-		if err != nil {
-			return 0, err
-		}
-
-		m, err = this.out.Write(this.outtmp[0:n])
-		if err != nil {
-			return m, err
-		}
-	} else {
-		n, err = msg.Encode(buf[0:])
-		if err != nil {
-			return 0, err
-		}
-
-		m, err = this.out.WriteCommit(n)
-		if err != nil {
-			return 0, err
-		}
+	//m, err = this.out.WriteCommit(n)
+	ok := this.out.WriteBuffer(&buf)
+	if !ok {
+		return 0, err
 	}
+	//}
 
-	this.outStat.increment(int64(m))
+	this.outStat.increment(int64(n))
 
-	return m, nil
+	return n, nil
 }
