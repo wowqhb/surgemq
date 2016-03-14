@@ -266,16 +266,20 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		write_bytes = make([]byte, 0, total_tmp)
 		write_bytes = append(write_bytes, b[0:max_cnt+1]...)
 		ttime := 100
+		fmt.Println("write_bytes(0):==>>", write_bytes)
 		if remlen_tmp > 0 {
+			fmt.Println("remlen_tmp > 0:==>>", remlen_tmp > 0)
 			leatnum := remlen_tmp
 			for leatnum > 0 {
+				fmt.Println("leatnum > 0:==>>", leatnum > 0)
 				b_tmp := make([]byte, 1)
 
 				n, err = r.Read(b_tmp)
+				fmt.Println("b_tmp:==>>", b_tmp)
 				if err != nil {
 					ttime--
 					if err == io.EOF && ttime > 0 {
-						fmt.Println(ttime)
+						fmt.Println("Sleep:==>>", 1 * time.Microsecond)
 						time.Sleep(1 * time.Microsecond)
 						continue
 					}
@@ -288,7 +292,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				}
 			}
 		}
+
 		fmt.Println("write_bytes(2):==>>", write_bytes)
+
 		ok := this.WriteBuffer(&write_bytes)
 
 		if !ok {
