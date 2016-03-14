@@ -63,8 +63,8 @@ func (this *service) processor() {
 	for {
 		// 1. Find out what message is next and the size of the message
 		//     this.rmu.Lock()
-		fmt.Println("inbuffer:=>>", this.in.buf)
-		fmt.Println("outbuffer:=>>", this.out.buf)
+		//fmt.Println("inbuffer:=>>", this.in.buf)
+		//fmt.Println("outbuffer:=>>", this.out.buf)
 		p, ok := this.in.ReadBuffer()
 		if !ok {
 			Log.Debugc(func() string {
