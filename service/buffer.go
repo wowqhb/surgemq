@@ -287,7 +287,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				ttime = 100
 				if n > 0 {
 					leatnum--
-					write_bytes = append(write_bytes[max_cnt+remlen_tmp-leatnum:], b_tmp[0:1]...)
+					write_bytes = append(write_bytes[int64(max_cnt)+remlen_tmp-leatnum:], b_tmp[0:1]...)
 				}
 			}
 		}
