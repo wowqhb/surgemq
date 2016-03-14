@@ -160,12 +160,11 @@ func init() {
 			case client := <-ClientMapProcessor:
 				client_id := client.Name
 				client_conn := client.Conn
-				client = nil
 
 				if ClientMap[client_id] != nil {
-					old_conn := *ClientMap[client_id]
-					old_conn.Close()
-					old_conn = nil
+					old_conn := ClientMap[client_id]
+					(*old_conn).Close()
+					ClientMap[client_id] = nil
 					Log.Debugc(func() string {
 						return fmt.Sprintf("client connected with same client_id: %s. close old connection.", client_id)
 					})
@@ -173,9 +172,11 @@ func init() {
 				ClientMap[client_id] = client_conn
 
 			case client_id := <-ClientMapCleanProcessor:
-				old_conn := *ClientMap[client_id]
-				old_conn.Close()
-				old_conn = nil
+				old_conn := ClientMap[client_id]
+				if old_conn != nil {
+					(*old_conn).Close()
+				}
+				ClientMap[client_id] = nil
 			case _ = <-PkgIdProcessor:
 				PkgIdGenerator <- PkgId
 				PkgId++

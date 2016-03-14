@@ -105,6 +105,10 @@ func (this *mxTopics) Retained(topic []byte, msgs *[]*message.PublishMessage) er
 }
 
 func (this *mxTopics) Close() error {
+	for key, _ := range this.subscriber {
+		delete(this.subscriber, key)
+	}
+
 	this.subscriber = nil
 	return nil
 }

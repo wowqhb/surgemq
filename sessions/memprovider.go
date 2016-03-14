@@ -71,6 +71,10 @@ func (this *memProvider) Count() int {
 }
 
 func (this *memProvider) Close() error {
+	for key, _ := range this.st {
+		delete(this.st, key)
+	}
+
 	this.st = make(map[string]*Session)
 	return nil
 }

@@ -17,7 +17,7 @@ package service
 import (
 	"encoding/base64"
 	"github.com/pquerna/ffjson/ffjson"
-	//   "encoding/json"
+//   "encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	//   "runtime/debug"
+//   "runtime/debug"
 	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
@@ -202,10 +202,12 @@ func (this *service) processIncoming(msg message.Message) error {
 
 	case *message.PingreqMessage:
 		// For PINGREQ message, we should send back PINGRESP
+		//     Log.Debugc(func() string { return fmt.Sprintf("(%s) receive pingreq.", this.cid()) })
 		resp := message.NewPingrespMessage()
 		_, err = this.writeMessage(resp)
 
 	case *message.PingrespMessage:
+		//     Log.Debugc(func() string { return fmt.Sprintf("(%s) receive pingresp.", this.cid()) })
 		this.sess.Pingack.Ack(msg)
 		this.processAcked(this.sess.Pingack)
 
@@ -636,9 +638,9 @@ func _process_ack(pkg_id uint16) {
 func _get_temp_subs() (subs *[]interface{}) {
 	select {
 	case subs = <-SubscribersSliceQueue:
-		// 成功从缓存池里拿到，直接返回
+	// 成功从缓存池里拿到，直接返回
 	default:
-		// 拿不到，说明池子里没对象了，就地创建一个
+	// 拿不到，说明池子里没对象了，就地创建一个
 		sub_p := make([]interface{}, 1, 1)
 		return &sub_p
 	}
@@ -650,7 +652,7 @@ func _return_temp_subs(subs *[]interface{}) {
 	(*subs)[0] = nil
 	select {
 	case SubscribersSliceQueue <- subs:
-		// 成功返还，什么都不做
+	// 成功返还，什么都不做
 	default:
 		*subs = nil
 		Log.Errorc(func() string {
@@ -665,7 +667,7 @@ func _get_tmp_msg() (msg *message.PublishMessage) {
 	select {
 	case msg = <-NewMessagesQueue:
 		msg.SetPacketId(GetRandPkgId())
-		// 成功取到msg，什么都不做
+	// 成功取到msg，什么都不做
 	default:
 		msg = message.NewPublishMessage()
 		msg.SetPacketId(GetRandPkgId())
@@ -678,7 +680,7 @@ func _get_tmp_msg() (msg *message.PublishMessage) {
 func _return_tmp_msg(msg *message.PublishMessage) {
 	select {
 	case NewMessagesQueue <- msg:
-		//成功还回去了，什么都不做
+	//成功还回去了，什么都不做
 	default:
 		msg = nil
 	}

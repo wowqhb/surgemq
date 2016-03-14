@@ -226,8 +226,8 @@ func (this *service) stop() {
 	// Close the network connection
 	if this.conn != nil {
 		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
-		ClientMapCleanProcessor <- this.sess.ID()
 		this.conn.Close()
+		ClientMapCleanProcessor <- this.sess.ID()
 	}
 
 	this.in.Close()
