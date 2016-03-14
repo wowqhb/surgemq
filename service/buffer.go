@@ -291,7 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				}
 			}
 		}
-
+		fmt.Println("write_bytes:==>>", write_bytes)
 		ok := this.WriteBuffer(&write_bytes)
 
 		if !ok {
