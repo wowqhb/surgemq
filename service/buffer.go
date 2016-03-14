@@ -212,7 +212,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	writeIndex := this.GetCurrentWriteIndex()
 	for {
 		readIndex = this.GetCurrentReadIndex()
-		if writeIndex-readIndex >= this.size {
+		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			this.ccond.Broadcast()
 			this.pcond.Wait()
 		} else {
