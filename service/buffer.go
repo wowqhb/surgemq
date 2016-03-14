@@ -189,8 +189,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		if readIndex >= writeIndex {
 			//fmt.Println("read wait")
 			this.pcond.Broadcast()
-			//this.ccond.Wait()
-			time.Sleep(2 * time.Millisecond)
+			this.ccond.Wait()
 		} else {
 			break
 		}
@@ -224,7 +223,8 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			fmt.Println("write wait")
 			this.ccond.Broadcast()
-			this.pcond.Wait()
+			//this.pcond.Wait()
+			time.Sleep(1 * time.Millisecond)
 		} else {
 			break
 		}
