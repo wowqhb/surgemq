@@ -237,23 +237,20 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		total += int64(n)
 		max_cnt := 1
 		for {
-			if max_cnt > 4 {
-				return total, errors.New("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
-			}
-
-			n, err = r.Read(b[max_cnt : max_cnt+1])
-			if err != nil {
+			if this.isDone() {
 				return total, io.EOF
 			}
-			/*for err == io.EOF {
-				if this.isDone() {
-					return total, io.EOF
-				}
-				time.Sleep(2 * time.Microsecond)
-				n, err = r.Read(b[max_cnt : max_cnt+1])
-			}*/
+			// If we have read 5 bytes and still not done, then there's a problem.
+			if max_cnt > 4 {
+				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+			}
+			_, err := r.Read(b[max_cnt:(max_cnt + 1)])
 
-			if b[max_cnt-1] >= 0x80 {
+			//fmt.Println(b)
+			if err != nil {
+				return total, err
+			}
+			if b[max_cnt] >= 0x80 {
 				max_cnt++
 			} else {
 				break
@@ -264,33 +261,45 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		total_tmp := remlen_tmp + int64(1) + int64(m)
 
 		write_bytes = make([]byte, 0, total_tmp)
-		write_bytes = append(write_bytes, b[0:max_cnt+1]...)
-		ttime := 100
+		write_bytes = append(write_bytes, b[0:m+1]...)
 		fmt.Println("write_bytes(0):==>>", write_bytes)
-		if remlen_tmp > 0 {
-			fmt.Println("remlen_tmp > 0:==>>", remlen_tmp > 0)
-			leatnum := remlen_tmp
-			for leatnum > 0 {
-				fmt.Println("leatnum > 0:==>>", leatnum > 0)
-				b_tmp := make([]byte, 1)
-
-				n, err = r.Read(b_tmp)
-				fmt.Println("b_tmp:==>>", b_tmp)
-				if err != nil {
-					ttime--
-					if err == io.EOF && ttime > 0 {
-						fmt.Println("Sleep:==>>", 1 * time.Microsecond)
-						time.Sleep(1 * time.Microsecond)
-						continue
-					}
-					return total, err
-				}
-				ttime = 100
-				if n > 0 {
-					leatnum--
-					write_bytes = append(write_bytes, b_tmp[0])
-				}
+		nlen := int64(0)
+		times := 0
+		cnt_ := 32
+		for nlen < remlen_tmp {
+			if this.isDone() {
+				return total, io.EOF
 			}
+			if times > 100 {
+				return total, io.EOF
+			} else {
+				times = 0
+			}
+			times++
+			tmpm := remlen_tmp - nlen
+
+			var b_ []byte
+			if tmpm < int64(cnt_) {
+				b_ = make([]byte, tmpm)
+			} else {
+				b_ = make([]byte, cnt_)
+			}
+
+			//b_ := make([]byte, remlen)
+			n, err = r.Read(b_[0:])
+
+			if err != nil {
+				/*Log.Errorc(func() string {
+					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
+				})
+				time.Sleep(5 * time.Millisecond)
+				continue*/
+				return total, err
+			}
+			write_bytes = append(write_bytes, b_[0:]...)
+			fmt.Println("write_bytes(1):==>>", write_bytes)
+			nlen += int64(n)
+			total += int64(n)
 		}
 
 		fmt.Println("write_bytes(2):==>>", write_bytes)
