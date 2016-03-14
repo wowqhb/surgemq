@@ -22,7 +22,6 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 var (
@@ -175,6 +174,7 @@ func (this *buffer) Close() error {
 func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	this.ccond.L.Lock()
 	defer func() {
+		this.pcond.Broadcast()
 		this.ccond.L.Unlock()
 	}()
 	ok = false
@@ -210,6 +210,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	this.pcond.L.Lock()
 	defer func() {
+		this.ccond.Broadcast()
 		this.pcond.L.Unlock()
 	}()
 	ok = false
@@ -223,8 +224,8 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			fmt.Println("write wait")
 			this.ccond.Broadcast()
-			//this.pcond.Wait()
-			time.Sleep(1 * time.Millisecond)
+			this.pcond.Wait()
+			//time.Sleep(1 * time.Millisecond)
 		} else {
 			break
 		}
