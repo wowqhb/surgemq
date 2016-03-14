@@ -222,7 +222,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
-			fmt.Println("write wait")
+			//fmt.Println("write wait")
 			this.ccond.Broadcast()
 			this.pcond.Wait()
 			//time.Sleep(1 * time.Millisecond)
