@@ -242,13 +242,16 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 
 			n, err = r.Read(b[max_cnt : max_cnt+1])
-			for err == io.EOF {
+			if err != nil {
+				return total, io.EOF
+			}
+			/*for err == io.EOF {
 				if this.isDone() {
 					return total, io.EOF
 				}
 				time.Sleep(2 * time.Microsecond)
 				n, err = r.Read(b[max_cnt : max_cnt+1])
-			}
+			}*/
 
 			if b[max_cnt-1] >= 0x80 {
 				max_cnt++
