@@ -265,21 +265,17 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		write_bytes = make([]byte, 0, total_tmp)
 		write_bytes = append(write_bytes, b[0:max_cnt+1]...)
-		fmt.Println("write_bytes(1):==>>", write_bytes)
 		ttime := 100
 		if remlen_tmp > 0 {
 			leatnum := remlen_tmp
-			for leatnum > 0 {
+			for leatnum > 0 && ttime > 0 {
 				b_tmp := make([]byte, 1)
 
 				n, err = r.Read(b_tmp)
 				if err != nil {
 					if err == io.EOF {
 						ttime--
-						if ttime < 0 {
-							return total, errors.New("read conn time to leat")
-						}
-						time.Sleep(2 * time.Microsecond)
+						time.Sleep(1 * time.Microsecond)
 						continue
 					}
 					return total, err
@@ -287,7 +283,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				ttime = 100
 				if n > 0 {
 					leatnum--
-					write_bytes = append(write_bytes, b_tmp[0:1]...)
+					write_bytes = append(write_bytes, b_tmp[0])
 				}
 			}
 		}
