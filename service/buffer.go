@@ -26,13 +26,13 @@ import (
 )
 
 var (
-	bufcnt            int64
+	bufcnt int64
 	DefaultBufferSize int64
 
-	DeviceInBufferSize  int64
+	DeviceInBufferSize int64
 	DeviceOutBufferSize int64
 
-	MasterInBufferSize  int64
+	MasterInBufferSize int64
 	MasterOutBufferSize int64
 )
 
@@ -60,19 +60,19 @@ func (this *sequence) set(seq int64) {
 }
 
 type buffer struct {
-	id int64
+	id         int64
 
 	readIndex  int64 //读序号
 	writeIndex int64 //写序号
 	buf        []*[]byte
 
-	size int64
-	mask int64
+	size       int64
+	mask       int64
 
-	done int64
+	done       int64
 
-	pcond *sync.Cond
-	ccond *sync.Cond
+	pcond      *sync.Cond
+	ccond      *sync.Cond
 }
 
 func newBuffer(size int64) (*buffer, error) {
@@ -188,7 +188,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 			return false
 		}
 		readIndex = this.GetCurrentReadIndex()
-		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
+		if writeIndex >= readIndex && writeIndex - readIndex >= this.size {
 			//fmt.Println("write wait")
 			this.ccond.Broadcast()
 			this.pcond.Wait()
@@ -218,8 +218,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		var write_bytes []byte
 
-		//b := make([]byte, 5)
-		n, err := r.Read(write_bytes[0:1])
+		b := make([]byte, 5)
+		n, err := r.Read(b[0:1])
 		if err != nil {
 			return total, io.EOF
 		}
@@ -233,26 +233,24 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			if max_cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
-			_, err := r.Read(write_bytes[max_cnt:(max_cnt + 1)])
+			_, err := r.Read(b[max_cnt:(max_cnt + 1)])
 
 			//fmt.Println(b)
 			if err != nil {
 				return total, err
 			}
-			if write_bytes[max_cnt] >= 0x80 {
+			if b[max_cnt] >= 0x80 {
 				max_cnt++
 			} else {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(write_bytes[1 : max_cnt+1])
+		remlen, m := binary.Uvarint(b[1 : max_cnt + 1])
 		remlen_tmp := int64(remlen)
 		total_tmp := remlen_tmp + int64(1) + int64(m)
-		if total_tmp > int64(4096) {
 
-		}
 		write_bytes = make([]byte, 0, total_tmp)
-		write_bytes = append(write_bytes, write_bytes[0:m+1]...)
+		write_bytes = append(write_bytes, b[0:m + 1]...)
 		nlen := int64(0)
 		times := 0
 		cnt_ := 32
@@ -354,7 +352,7 @@ func ringCopy(dst, src []byte, start int64) int {
 }
 
 func powerOfTwo64(n int64) bool {
-	return n != 0 && (n&(n-1)) == 0
+	return n != 0 && (n & (n - 1)) == 0
 }
 
 func roundUpPowerOfTwo64(n int64) int64 {
