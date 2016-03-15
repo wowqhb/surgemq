@@ -220,8 +220,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 
 		var b *[]byte
+		default_size := int64(4096)
 
-		b__ := make([]byte, int64(4096))
+		b__ := make([]byte, default_size)
 		b = &b__
 		n, err := r.Read((*b)[0:1])
 		if err != nil {
@@ -253,7 +254,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_tmp := int64(remlen)
 		start_ := int64(1) + int64(m)
 		total_tmp := remlen_tmp + start_
-		if total_tmp > int64(4096) {
+		if total_tmp > default_size {
 			write_bytes := make([]byte, 0, total_tmp)
 			write_bytes = append(write_bytes, (*b)[0:m+1]...)
 			b = &write_bytes
