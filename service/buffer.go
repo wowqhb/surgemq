@@ -253,8 +253,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		start_ := int64(1) + int64(m)
 		total_tmp := remlen_tmp + start_
 
-		write_bytes = make([]byte, 0, total_tmp)
-		write_bytes = append(write_bytes, b[0:m+1]...)
+		write_bytes = make([]byte, total_tmp)
+		copy(write_bytes[0:m+1], b[0:m+1]...)
 		nlen := int64(0)
 		times := 0
 		cnt_ := int64(32)
