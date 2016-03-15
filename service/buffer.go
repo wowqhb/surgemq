@@ -290,7 +290,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				continue*/
 				return total, err
 			}
-			write_bytes = append(write_bytes, b_[0:]...)
+			//write_bytes = append(write_bytes, b_[0:]...)
 			nlen += int64(n)
 			total += int64(n)
 		}
