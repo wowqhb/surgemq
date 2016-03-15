@@ -216,7 +216,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, io.EOF
 		}
 
-		var write_bytes []byte = make([]byte, int64(0), int64(4096))
+		var write_bytes []byte = make([]byte, int64(4096))
 
 		//b := make([]byte, 5)
 		n, err := r.Read(write_bytes[0:1])
@@ -249,7 +249,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		remlen_tmp := int64(remlen)
 		total_tmp := remlen_tmp + int64(1) + int64(m)
 		if total_tmp > int64(4096) {
-			tmp_byte := make([]byte, int64(0), total_tmp)
+			tmp_byte := make([]byte, total_tmp)
+
 			write_bytes = append(tmp_byte[0:], write_bytes[:max_cnt+1]...)
 		}
 		//write_bytes = append(write_bytes, write_bytes[0:m+1]...)
