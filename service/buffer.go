@@ -255,8 +255,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		start_ := int64(1) + int64(m)
 		total_tmp := remlen_tmp + start_
 		if total_tmp > default_size {
-			write_bytes := make([]byte, 0, total_tmp)
-			write_bytes = append(write_bytes, (*b)[0:m+1]...)
+			write_bytes := make([]byte, total_tmp)
+			for i := int64(0); i < start_; i++ {
+				write_bytes[i] = (*b)[i]
+			}
 			b = &write_bytes
 		}
 
