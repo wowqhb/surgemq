@@ -17,7 +17,7 @@ package service
 import (
 	"encoding/base64"
 	"github.com/pquerna/ffjson/ffjson"
-//   "encoding/json"
+	//   "encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-//   "runtime/debug"
+	//   "runtime/debug"
 	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
@@ -107,17 +107,6 @@ func (this *service) processor() {
 				return
 			}
 		}
-
-		// 7. We should commit the bytes in the buffer so we can move on
-		/*_, err = this.in.ReadCommit(total)
-		if err != nil {
-			if err != io.EOF {
-				Log.Errorc(func() string {
-					return fmt.Sprintf("(%s) Error committing %d read bytes: %v", this.cid(), total, err)
-				})
-			}
-			return
-		}*/
 
 		// 7. Check to see if done is closed, if so, exit
 		if this.isDone() {
@@ -640,7 +629,7 @@ func _get_temp_subs() (subs *[]interface{}) {
 	case subs = <-SubscribersSliceQueue:
 	// 成功从缓存池里拿到，直接返回
 	default:
-	// 拿不到，说明池子里没对象了，就地创建一个
+		// 拿不到，说明池子里没对象了，就地创建一个
 		sub_p := make([]interface{}, 1, 1)
 		return &sub_p
 	}
