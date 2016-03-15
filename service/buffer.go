@@ -230,7 +230,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				return total, io.EOF
 			}
 			// If we have read 5 bytes and still not done, then there's a problem.
-			if max_cnt > int(4) {
+			if max_cnt > int64(4) {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
 			_, err := r.Read(write_bytes[max_cnt:(max_cnt + 1)])
