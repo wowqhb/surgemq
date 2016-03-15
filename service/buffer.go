@@ -219,12 +219,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, io.EOF
 		}
 
-		var b *[]byte
-		default_size := int64(4096)
+		var write_bytes []byte
 
-		b__ := make([]byte, default_size)
-		b = &b__
-		n, err := r.Read((*b)[0:1])
+		b := make([]byte, 5)
+		n, err := r.Read(b[0:1])
 		if err != nil {
 			return total, io.EOF
 		}
@@ -238,34 +236,29 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			if max_cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
-			_, err := r.Read((*b)[max_cnt:(max_cnt + 1)])
+			_, err := r.Read(b[max_cnt:(max_cnt + 1)])
 
 			//fmt.Println(b)
 			if err != nil {
 				return total, err
 			}
-			if (*b)[max_cnt] >= 0x80 {
+			if b[max_cnt] >= 0x80 {
 				max_cnt++
 			} else {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint((*b)[1 : max_cnt+1])
+		remlen, m := binary.Uvarint(b[1 : max_cnt+1])
 		remlen_tmp := int64(remlen)
 		start_ := int64(1) + int64(m)
 		total_tmp := remlen_tmp + start_
-		if total_tmp > default_size {
-			write_bytes := make([]byte, total_tmp)
-			for i := int64(0); i < start_; i++ {
-				write_bytes[i] = (*b)[i]
-			}
-			b = &write_bytes
-		}
 
-		nlen := int64(start_)
+		write_bytes = make([]byte, 0, total_tmp)
+		write_bytes = append(write_bytes, b[0:m+1]...)
+		nlen := int64(0)
 		times := 0
 		cnt_ := 32
-		for nlen < total_tmp {
+		for nlen < remlen_tmp {
 			if this.isDone() {
 				return total, io.EOF
 			}
@@ -275,13 +268,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				times = 0
 			}
 			times++
-			tmpm := total_tmp - nlen
+			tmpm := remlen_tmp - nlen
 
-			var b_ []byte
-			if tmpm < int64(cnt_) {
-				b_ = (*b)[nlen:total_tmp]
-			} else {
-				b_ = (*b)[nlen : nlen+int64(cnt_)]
+			b_ := write_bytes[(start_ + nlen):]
+			if tmpm > int64(cnt_) {
+				b_ = write_bytes[(start_ + nlen):(start_ + nlen + cnt_)]
 			}
 
 			//b_ := make([]byte, remlen)
@@ -300,7 +291,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			total += int64(n)
 		}
 
-		ok := this.WriteBuffer(b)
+		ok := this.WriteBuffer(&write_bytes)
 
 		if !ok {
 			return total, errors.New("write ringbuffer failed")
