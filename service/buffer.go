@@ -280,8 +280,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 			//b_ := make([]byte, remlen)
 			//n, err = r.Read(b_[0:])
-
-			n, err = r.Read(write_bytes[start+nlen : start+nlen+len])
+			b_ := write_bytes[start+nlen : start+nlen+len]
+			n, err = r.Read(b_)
 
 			if err != nil {
 				/*Log.Errorc(func() string {
