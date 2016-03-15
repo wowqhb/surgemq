@@ -216,44 +216,47 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			return total, io.EOF
 		}
 
-		var write_bytes []byte
+		var write_bytes []byte = make([]byte, int64(0), int64(4096))
 
-		b := make([]byte, 5)
-		n, err := r.Read(b[0:1])
+		//b := make([]byte, 5)
+		n, err := r.Read(write_bytes[0:1])
 		if err != nil {
 			return total, io.EOF
 		}
 		total += int64(n)
-		max_cnt := 1
+		max_cnt := int64(1)
 		for {
 			if this.isDone() {
 				return total, io.EOF
 			}
 			// If we have read 5 bytes and still not done, then there's a problem.
-			if max_cnt > 4 {
+			if max_cnt > int(4) {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
-			_, err := r.Read(b[max_cnt:(max_cnt + 1)])
+			_, err := r.Read(write_bytes[max_cnt:(max_cnt + 1)])
 
 			//fmt.Println(b)
 			if err != nil {
 				return total, err
 			}
-			if b[max_cnt] >= 0x80 {
+			if write_bytes[max_cnt] >= 0x80 {
 				max_cnt++
 			} else {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1 : max_cnt+1])
+		remlen, m := binary.Uvarint(write_bytes[1 : max_cnt+1])
 		remlen_tmp := int64(remlen)
 		total_tmp := remlen_tmp + int64(1) + int64(m)
-
-		write_bytes = make([]byte, 0, total_tmp)
-		write_bytes = append(write_bytes, b[0:m+1]...)
+		if total_tmp > int64(4096) {
+			tmp_byte := make([]byte, int64(0), total_tmp)
+			write_bytes = append(tmp_byte[0:], write_bytes[:max_cnt+1]...)
+		}
+		//write_bytes = append(write_bytes, write_bytes[0:m+1]...)
 		nlen := int64(0)
 		times := 0
 		cnt_ := 32
+		max_cnt++
 		for nlen < remlen_tmp {
 			if this.isDone() {
 				return total, io.EOF
@@ -266,16 +269,19 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			times++
 			tmpm := remlen_tmp - nlen
 
-			var b_ []byte
+			/*var b_ []byte
 			if tmpm < int64(cnt_) {
 				b_ = make([]byte, tmpm)
 			} else {
 				b_ = make([]byte, cnt_)
+			}*/
+			readlen := int64(cnt_)
+			if tmpm < int64(cnt_) {
+				readlen = tmpm
 			}
-
 			//b_ := make([]byte, remlen)
-			n, err = r.Read(b_[0:])
-
+			n, err = r.Read(write_bytes[max_cnt : max_cnt+readlen])
+			max_cnt += readlen
 			if err != nil {
 				/*Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
@@ -284,7 +290,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				continue*/
 				return total, err
 			}
-			write_bytes = append(write_bytes, b_[0:]...)
+			//write_bytes = append(write_bytes, b_[0:]...)
 			nlen += int64(n)
 			total += int64(n)
 		}
