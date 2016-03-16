@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -126,12 +127,12 @@ func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
-	this.ccond.Signal()
+	//this.ccond.Signal()
 	//this.ccond.Broadcast()
 	this.pcond.L.Unlock()
 
 	this.ccond.L.Lock()
-	this.pcond.Signal()
+	//this.pcond.Signal()
 	//this.pcond.Broadcast()
 	this.ccond.L.Unlock()
 
@@ -144,7 +145,7 @@ func (this *buffer) Close() error {
 func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	this.ccond.L.Lock()
 	defer func() {
-		this.pcond.Signal()
+		//this.pcond.Signal()
 		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
@@ -159,9 +160,11 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		}
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
-			this.pcond.Signal()
+			//this.pcond.Signal()
 			//this.pcond.Broadcast()
-			this.ccond.Wait()
+			//this.ccond.Wait()
+			runtime.Gosched()
+			time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
@@ -184,7 +187,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	this.pcond.L.Lock()
 	defer func() {
-		this.ccond.Signal()
+		//this.ccond.Signal()
 		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
@@ -200,8 +203,10 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			this.ccond.Signal()
 			//this.ccond.Broadcast()
-			this.pcond.Wait()
+			//this.pcond.Wait()
 			//time.Sleep(1 * time.Millisecond)
+			runtime.Gosched()
+			time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
@@ -224,7 +229,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
