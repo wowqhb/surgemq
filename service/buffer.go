@@ -144,7 +144,6 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	defer func() {
 		this.pcond.Broadcast()
 		this.ccond.L.Unlock()
-		time.Sleep(5 * time.Microsecond)
 	}()
 	ok = false
 	p = nil
@@ -162,6 +161,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		} else {
 			break
 		}
+		time.Sleep(500 * time.Microsecond)
 	}
 	index := readIndex & this.mask //替代求模
 	p = this.buf[index]
@@ -181,7 +181,6 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	defer func() {
 		this.ccond.Broadcast()
 		this.pcond.L.Unlock()
-		time.Sleep(5 * time.Microsecond)
 	}()
 	ok = false
 	readIndex := this.GetCurrentReadIndex()
@@ -199,7 +198,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		} else {
 			break
 		}
-
+		time.Sleep(500 * time.Microsecond)
 	}
 	index := writeIndex & this.mask //替代求模
 	this.buf[index] = in
