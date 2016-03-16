@@ -143,13 +143,13 @@ func (this *buffer) Close() error {
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
 */
 func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
-	this.ccond.L.Lock()
+	/*this.ccond.L.Lock()
 	defer func() {
 		//this.pcond.Signal()
 		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
-	}()
+	}()*/
 	ok = false
 	p = nil
 	readIndex := this.GetCurrentReadIndex()
@@ -163,7 +163,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 			//this.pcond.Signal()
 			//this.pcond.Broadcast()
 			//this.ccond.Wait()
-			runtime.Gosched()
+			//runtime.Gosched()
 			time.Sleep(5 * time.Millisecond)
 		} else {
 			break
@@ -172,8 +172,10 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		//time.Sleep(1 * time.Millisecond)
 	}
 	index := readIndex & this.mask //替代求模
+	this.ccond.L.Lock()
 	p = this.buf[index]
 	this.buf[index] = nil
+	this.ccond.L.Unlock()
 	atomic.AddInt64(&this.readIndex, int64(1))
 	if p != nil {
 		ok = true
@@ -185,13 +187,13 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 写入ringbuffer指针，以及将写序号加1
 */
 func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
-	this.pcond.L.Lock()
+	/*this.pcond.L.Lock()
 	defer func() {
 		//this.ccond.Signal()
 		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
-	}()
+	}()*/
 	ok = false
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
@@ -201,11 +203,11 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
-			this.ccond.Signal()
+			//this.ccond.Signal()
 			//this.ccond.Broadcast()
 			//this.pcond.Wait()
 			//time.Sleep(1 * time.Millisecond)
-			runtime.Gosched()
+			//runtime.Gosched()
 			time.Sleep(5 * time.Millisecond)
 		} else {
 			break
@@ -214,7 +216,9 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		//time.Sleep(1 * time.Millisecond)
 	}
 	index := writeIndex & this.mask //替代求模
+	this.pcond.L.Lock()
 	this.buf[index] = in
+	this.pcond.L.Unlock()
 	atomic.AddInt64(&this.writeIndex, int64(1))
 	ok = true
 	return ok
