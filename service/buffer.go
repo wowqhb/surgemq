@@ -149,6 +149,11 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		this.ccond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
 	}()*/
+	defer func() {
+		this.ccond.L.Lock()
+		this.pcond.Signal()
+		this.ccond.L.Unlock()
+	}()
 	ok = false
 	p = nil
 	readIndex := this.GetCurrentReadIndex()
@@ -195,6 +200,11 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		this.pcond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
 	}()*/
+	defer func() {
+		this.pcond.L.Lock()
+		this.ccond.Signal()
+		this.pcond.L.Unlock()
+	}()
 	ok = false
 	readIndex := this.GetCurrentReadIndex()
 	writeIndex := this.GetCurrentWriteIndex()
