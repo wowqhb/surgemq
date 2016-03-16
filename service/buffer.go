@@ -302,7 +302,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if !ok {
 			return total, errors.New("write ringbuffer failed")
 		}
-		time.Sleep(5 * time.Millisecond)
 	}
 }
 
