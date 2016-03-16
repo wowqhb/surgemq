@@ -126,12 +126,12 @@ func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
-	//this.ccond.Signal()
+	this.ccond.Signal()
 	//this.ccond.Broadcast()
 	this.pcond.L.Unlock()
 
 	this.ccond.L.Lock()
-	//this.pcond.Signal()
+	this.pcond.Signal()
 	//this.pcond.Broadcast()
 	this.ccond.L.Unlock()
 
@@ -159,11 +159,13 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		}
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
-			//this.pcond.Signal()
+			this.ccond.L.Lock()
+			this.pcond.Signal()
 			//this.pcond.Broadcast()
-			//this.ccond.Wait()
+			this.ccond.Wait()
+			this.ccond.L.Unlock()
 			//runtime.Gosched()
-			time.Sleep(5 * time.Millisecond)
+			//time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
@@ -171,10 +173,10 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		//time.Sleep(1 * time.Millisecond)
 	}
 	index := readIndex & this.mask //替代求模
-	this.ccond.L.Lock()
+
 	p = this.buf[index]
 	this.buf[index] = nil
-	this.ccond.L.Unlock()
+
 	atomic.AddInt64(&this.readIndex, int64(1))
 	if p != nil {
 		ok = true
@@ -202,12 +204,14 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
-			//this.ccond.Signal()
+			this.pcond.L.Lock()
+			this.ccond.Signal()
 			//this.ccond.Broadcast()
-			//this.pcond.Wait()
+			this.pcond.Wait()
+			this.pcond.L.Unlock()
 			//time.Sleep(1 * time.Millisecond)
 			//runtime.Gosched()
-			time.Sleep(5 * time.Millisecond)
+			//time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
@@ -215,9 +219,9 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		//time.Sleep(1 * time.Millisecond)
 	}
 	index := writeIndex & this.mask //替代求模
-	this.pcond.L.Lock()
+
 	this.buf[index] = in
-	this.pcond.L.Unlock()
+
 	atomic.AddInt64(&this.writeIndex, int64(1))
 	ok = true
 	return ok
@@ -232,7 +236,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
