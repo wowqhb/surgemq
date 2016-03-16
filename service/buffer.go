@@ -147,6 +147,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		this.pcond.Signal()
 		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
+		time.Sleep(3 * time.Millisecond)
 	}()
 	ok = false
 	p = nil
@@ -165,7 +166,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 			break
 		}
 		//time.Sleep(500 * time.Microsecond)
-		time.Sleep(1 * time.Millisecond)
+		//time.Sleep(1 * time.Millisecond)
 	}
 	index := readIndex & this.mask //替代求模
 	p = this.buf[index]
@@ -186,6 +187,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		this.ccond.Signal()
 		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
+		time.Sleep(3 * time.Millisecond)
 	}()
 	ok = false
 	readIndex := this.GetCurrentReadIndex()
@@ -204,7 +206,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 			break
 		}
 		//time.Sleep(500 * time.Microsecond)
-		time.Sleep(1 * time.Millisecond)
+		//time.Sleep(1 * time.Millisecond)
 	}
 	index := writeIndex & this.mask //替代求模
 	this.buf[index] = in
@@ -222,7 +224,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(4 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
