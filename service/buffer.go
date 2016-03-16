@@ -126,11 +126,13 @@ func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
-	this.ccond.Broadcast()
+	this.ccond.Signal()
+	//this.ccond.Broadcast()
 	this.pcond.L.Unlock()
 
 	this.ccond.L.Lock()
-	this.pcond.Broadcast()
+	this.pcond.Signal()
+	//this.pcond.Broadcast()
 	this.ccond.L.Unlock()
 
 	return nil
@@ -142,7 +144,8 @@ func (this *buffer) Close() error {
 func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	this.ccond.L.Lock()
 	defer func() {
-		this.pcond.Broadcast()
+		this.pcond.Signal()
+		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
 	}()
 	ok = false
@@ -155,8 +158,8 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		}
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
-			//fmt.Println("read wait")
-			this.pcond.Broadcast()
+			this.pcond.Signal()
+			//this.pcond.Broadcast()
 			this.ccond.Wait()
 		} else {
 			break
@@ -179,7 +182,8 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	this.pcond.L.Lock()
 	defer func() {
-		this.ccond.Broadcast()
+		this.ccond.Signal()
+		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
 	}()
 	ok = false
@@ -191,8 +195,8 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
-			//fmt.Println("write wait")
-			this.ccond.Broadcast()
+			this.ccond.Signal()
+			//this.ccond.Broadcast()
 			this.pcond.Wait()
 			//time.Sleep(1 * time.Millisecond)
 		} else {
@@ -298,6 +302,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		if !ok {
 			return total, errors.New("write ringbuffer failed")
 		}
+		time.Sleep(5 * time.Millisecond)
 	}
 }
 
