@@ -164,7 +164,8 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		} else {
 			break
 		}
-		time.Sleep(500 * time.Microsecond)
+		//time.Sleep(500 * time.Microsecond)
+		time.Sleep(1 * time.Millisecond)
 	}
 	index := readIndex & this.mask //替代求模
 	p = this.buf[index]
@@ -202,7 +203,8 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		} else {
 			break
 		}
-		time.Sleep(500 * time.Microsecond)
+		//time.Sleep(500 * time.Microsecond)
+		time.Sleep(1 * time.Millisecond)
 	}
 	index := writeIndex & this.mask //替代求模
 	this.buf[index] = in
@@ -220,7 +222,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(4 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
