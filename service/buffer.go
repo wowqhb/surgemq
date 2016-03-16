@@ -73,6 +73,8 @@ type buffer struct {
 
 	pcond *sync.Cond
 	ccond *sync.Cond
+
+	b []byte //readfrom中的临时数组，为反复使用不必创建新数组
 }
 
 func newBuffer(size int64) (*buffer, error) {
@@ -98,6 +100,7 @@ func newBuffer(size int64) (*buffer, error) {
 		mask:       size - 1,
 		pcond:      sync.NewCond(new(sync.Mutex)),
 		ccond:      sync.NewCond(new(sync.Mutex)),
+		b:          make([]byte, 5),
 	}, nil
 }
 
@@ -221,8 +224,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		var write_bytes []byte
 
-		b := make([]byte, 5)
-		n, err := r.Read(b[0:1])
+		//b := make([]byte, 5)
+		n, err := r.Read(this.b[0:1])
 		if err != nil {
 			return total, io.EOF
 		}
@@ -236,25 +239,25 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			if max_cnt > 4 {
 				return 0, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
 			}
-			_, err := r.Read(b[max_cnt:(max_cnt + 1)])
+			_, err := r.Read(this.b[max_cnt:(max_cnt + 1)])
 
 			//fmt.Println(b)
 			if err != nil {
 				return total, err
 			}
-			if b[max_cnt] >= 0x80 {
+			if this.b[max_cnt] >= 0x80 {
 				max_cnt++
 			} else {
 				break
 			}
 		}
-		remlen, m := binary.Uvarint(b[1 : max_cnt+1])
+		remlen, m := binary.Uvarint(this.b[1 : max_cnt+1])
 		remlen_tmp := int64(remlen)
 		start_ := int64(1) + int64(m)
 		total_tmp := remlen_tmp + start_
 
 		write_bytes = make([]byte, total_tmp)
-		copy(write_bytes[0:m+1], b[0:m+1])
+		copy(write_bytes[0:m+1], this.b[0:m+1])
 		nlen := int64(0)
 		times := 0
 		cnt_ := int64(32)
@@ -298,8 +301,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		}
 	}
 }
-
-
 
 func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	defer this.Close()
