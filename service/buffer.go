@@ -246,7 +246,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -337,7 +337,6 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(5 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -401,4 +400,92 @@ func roundUpPowerOfTwo64(n int64) int64 {
 	n++
 
 	return n
+}
+
+/**
+修改 尽量减少数据的创建
+*/
+func (this *buffer) ReadFrom_not_receiver(r io.Reader) (*[]byte, error) {
+
+	total := int64(0)
+
+	if this.isDone() {
+		return nil, io.EOF
+	}
+
+	var write_bytes []byte
+
+	//b := make([]byte, 5)
+	n, err := r.Read(this.b[0:1])
+	if err != nil {
+		return total, io.EOF
+	}
+	total += int64(n)
+	max_cnt := 1
+	for {
+		if this.isDone() {
+			return nil, io.EOF
+		}
+		// If we have read 5 bytes and still not done, then there's a problem.
+		if max_cnt > 4 {
+			return nil, fmt.Errorf("sendrecv/peekMessageSize: 4th byte of remaining length has continuation bit set")
+		}
+		_, err := r.Read(this.b[max_cnt:(max_cnt + 1)])
+
+		//fmt.Println(b)
+		if err != nil {
+			return nil, err
+		}
+		if this.b[max_cnt] >= 0x80 {
+			max_cnt++
+		} else {
+			break
+		}
+	}
+	remlen, m := binary.Uvarint(this.b[1 : max_cnt+1])
+	remlen_tmp := int64(remlen)
+	start_ := int64(1) + int64(m)
+	total_tmp := remlen_tmp + start_
+
+	write_bytes = make([]byte, total_tmp)
+	copy(write_bytes[0:m+1], this.b[0:m+1])
+	nlen := int64(0)
+	times := 0
+	cnt_ := int64(32)
+	for nlen < remlen_tmp {
+		if this.isDone() {
+			return nil, io.EOF
+		}
+		if times > 100 {
+			return nil, io.EOF
+		} else {
+			times = 0
+		}
+		times++
+		tmpm := remlen_tmp - nlen
+
+		b_ := write_bytes[(start_ + nlen):]
+		if tmpm > cnt_ {
+			b_ = write_bytes[(start_ + nlen):(start_ + nlen + cnt_)]
+		}
+
+		//b_ := make([]byte, remlen)
+		n, err = r.Read(b_[0:])
+
+		if err != nil {
+			/*Log.Errorc(func() string {
+				return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
+			})
+			time.Sleep(5 * time.Millisecond)
+			continue*/
+			return nil, err
+		}
+		//write_bytes = append(write_bytes, b_[0:]...)
+		nlen += int64(n)
+		total += int64(n)
+	}
+
+	//ok := this.WriteBuffer(&write_bytes)
+
+	return &write_bytes, nil
 }

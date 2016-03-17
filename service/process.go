@@ -30,6 +30,7 @@ import (
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/surgemq/message"
+	"net"
 )
 
 var (
@@ -61,7 +62,6 @@ func (this *service) processor() {
 	this.wgStarted.Done()
 
 	for {
-		time.Sleep(5 * time.Millisecond)
 		// 1. Find out what message is next and the size of the message
 		//     this.rmu.Lock()
 		//fmt.Println("inbuffer:=>>", this.in.buf)
@@ -117,6 +117,81 @@ func (this *service) processor() {
 		//if this.inStat.msgs%1000 == 0 {
 		//	Log.Debugc(func() string{ return fmt.Sprintf("(%s) Going to process message %d", this.cid(), this.inStat.msgs)})
 		//}
+	}
+}
+
+func (this *service) processor_not_readFrom() {
+	defer func() {
+		// Let's recover from panic
+		if r := recover(); r != nil {
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) processor_not_readFrom from panic: %v", this.cid(), r)
+			})
+		}
+
+		this.wgStopped.Done()
+		this.stop()
+
+		Log.Debugc(func() string {
+			return fmt.Sprintf("(%s) Stopping processor_not_readFrom", this.cid())
+		})
+	}()
+	this.wgStarted.Done()
+	switch conn := this.conn.(type) {
+	case net.Conn:
+		keepAlive := time.Second * time.Duration(this.keepAlive)
+		r := timeoutReader{
+			d:    keepAlive + (keepAlive / 2),
+			conn: conn,
+		}
+		for {
+			p, err := this.in.ReadFrom_not_receiver(r)
+			if err != nil {
+				Log.Debugc(func() string {
+					return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
+				})
+				return
+			}
+			mtype := message.MessageType((*p)[0] >> 4)
+
+			msg, err := mtype.New()
+			n, err := msg.Decode(*p)
+
+			if err != nil {
+				if err == io.EOF {
+					Log.Debugc(func() string {
+						return fmt.Sprintf("(%s) suddenly disconnect.", this.cid())
+					})
+				} else {
+					Log.Errorc(func() string {
+						return fmt.Sprintf("(%s) Error peeking next message: %v", this.cid(), err)
+					})
+				}
+				return
+			}
+
+			this.inStat.increment(int64(n))
+
+			// 5. Process the read message
+			err = this.processIncoming(msg)
+			if err != nil {
+				if err != errDisconnect {
+					Log.Errorc(func() string {
+						return fmt.Sprintf("(%s) Error processor_not_readFrom %s: %v", this.cid(), msg.Name(), err)
+					})
+				} else {
+					return
+				}
+			}
+
+			// 7. Check to see if done is closed, if so, exit
+			if this.isDone() {
+				return
+			}
+
+		}
+	default:
+		Log.Errorc(func() string { return fmt.Sprintf("(%s) %v", this.cid(), ErrInvalidConnectionType) })
 	}
 }
 
