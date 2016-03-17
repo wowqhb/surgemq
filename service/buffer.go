@@ -142,13 +142,13 @@ func (this *buffer) Close() error {
 读取ringbuffer指定的buffer指针，返回该指针并清空ringbuffer该位置存在的指针内容，以及将读序号加1
 */
 func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
-	/*this.ccond.L.Lock()
+	this.ccond.L.Lock()
 	defer func() {
-		//this.pcond.Signal()
+		this.pcond.Signal()
 		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
-	}()*/
+	}()
 	defer func() {
 		this.ccond.L.Lock()
 		this.pcond.Signal()
@@ -164,11 +164,9 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		}
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
-			this.ccond.L.Lock()
 			this.pcond.Signal()
 			//this.pcond.Broadcast()
 			this.ccond.Wait()
-			this.ccond.L.Unlock()
 			//runtime.Gosched()
 			//time.Sleep(5 * time.Millisecond)
 		} else {
@@ -193,13 +191,13 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 写入ringbuffer指针，以及将写序号加1
 */
 func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
-	/*this.pcond.L.Lock()
+	this.pcond.L.Lock()
 	defer func() {
-		//this.ccond.Signal()
+		this.ccond.Signal()
 		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
 		//time.Sleep(3 * time.Millisecond)
-	}()*/
+	}()
 	defer func() {
 		this.pcond.L.Lock()
 		this.ccond.Signal()
@@ -214,11 +212,9 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		}
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
-			this.pcond.L.Lock()
 			this.ccond.Signal()
 			//this.ccond.Broadcast()
 			this.pcond.Wait()
-			this.pcond.L.Unlock()
 			//time.Sleep(1 * time.Millisecond)
 			//runtime.Gosched()
 			//time.Sleep(5 * time.Millisecond)
