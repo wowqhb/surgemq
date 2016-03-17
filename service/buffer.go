@@ -294,9 +294,9 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			n, err = r.Read(b_[0:])
 
 			if err != nil {
-				Log.Errorc(func() string {
+				/*Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
-				})
+				})*/
 				time.Sleep(5 * time.Millisecond)
 				continue
 				//return total, err
