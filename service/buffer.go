@@ -234,7 +234,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -294,12 +294,12 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			n, err = r.Read(b_[0:])
 
 			if err != nil {
-				/*Log.Errorc(func() string {
+				Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
 				})
 				time.Sleep(5 * time.Millisecond)
-				continue*/
-				return total, err
+				continue
+				//return total, err
 			}
 			//write_bytes = append(write_bytes, b_[0:]...)
 			nlen += int64(n)
