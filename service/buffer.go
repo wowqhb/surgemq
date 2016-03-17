@@ -234,7 +234,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		//time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -277,6 +277,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		copy(write_bytes[0:m+1], this.b[0:m+1])
 		nlen := int64(0)
 		times := 0
+		cnt_ := int64(8)
 		for nlen < remlen_tmp {
 			if this.isDone() {
 				return total, io.EOF
@@ -287,8 +288,12 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				times = 0
 			}
 			times++
+			tmpm := remlen_tmp - nlen
 
-			b_ := write_bytes[(start_ + nlen):remlen_tmp]
+			b_ := write_bytes[(start_ + nlen):]
+			if tmpm > cnt_ {
+				b_ = write_bytes[(start_ + nlen):(start_ + nlen + cnt_)]
+			}
 
 			//b_ := make([]byte, remlen)
 			n, err = r.Read(b_[0:])
@@ -296,10 +301,10 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			if err != nil {
 				/*Log.Errorc(func() string {
 					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
-				})*/
-				time.Sleep(50 * time.Millisecond)
-				continue
-				//return total, err
+				})
+				time.Sleep(5 * time.Millisecond)
+				continue*/
+				return total, err
 			}
 			//write_bytes = append(write_bytes, b_[0:]...)
 			nlen += int64(n)
