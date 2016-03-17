@@ -403,7 +403,6 @@ func (this *buffer) ReadFrom_not_receiver(r io.Reader) (*[]byte, error) {
 
 	var write_bytes []byte
 
-	//b := make([]byte, 5)
 	n, err := r.Read(this.b[0:1])
 	if err != nil {
 		return nil, io.EOF
@@ -452,28 +451,18 @@ func (this *buffer) ReadFrom_not_receiver(r io.Reader) (*[]byte, error) {
 		times++
 		tmpm := remlen_tmp - nlen
 
-		b_ := write_bytes[(start_ + nlen):]
 		if tmpm > cnt_ {
-			b_ = write_bytes[(start_ + nlen):(start_ + nlen + cnt_)]
+			n, err = r.Read(write_bytes[(start_ + nlen):(start_ + nlen + cnt_)])
+		} else {
+			n, err = r.Read(write_bytes[(start_ + nlen):])
 		}
-
-		//b_ := make([]byte, remlen)
-		n, err = r.Read(b_[0:])
 
 		if err != nil {
-			/*Log.Errorc(func() string {
-				return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
-			})
-			time.Sleep(5 * time.Millisecond)
-			continue*/
 			return nil, err
 		}
-		//write_bytes = append(write_bytes, b_[0:]...)
 		nlen += int64(n)
 		total += int64(n)
 	}
-
-	//ok := this.WriteBuffer(&write_bytes)
 
 	return &write_bytes, nil
 }
