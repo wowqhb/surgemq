@@ -246,7 +246,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -337,6 +337,7 @@ func (this *buffer) WriteTo(w io.Writer) (int64, error) {
 	total := int64(0)
 
 	for {
+		time.Sleep(5 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
