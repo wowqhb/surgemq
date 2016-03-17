@@ -61,6 +61,7 @@ func (this *service) processor() {
 	this.wgStarted.Done()
 
 	for {
+		time.Sleep(5 * time.Millisecond)
 		// 1. Find out what message is next and the size of the message
 		//     this.rmu.Lock()
 		//fmt.Println("inbuffer:=>>", this.in.buf)
