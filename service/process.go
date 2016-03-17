@@ -145,6 +145,7 @@ func (this *service) processor_not_readFrom() {
 			conn: conn,
 		}
 		for {
+			time.Sleep(2 * time.Millisecond)
 			p, err := this.in.ReadFrom_not_receiver(r)
 			if err != nil {
 				Log.Debugc(func() string {
