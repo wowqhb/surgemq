@@ -418,7 +418,7 @@ func (this *buffer) ReadFrom_not_receiver(r io.Reader) (*[]byte, error) {
 	//b := make([]byte, 5)
 	n, err := r.Read(this.b[0:1])
 	if err != nil {
-		return total, io.EOF
+		return nil, io.EOF
 	}
 	total += int64(n)
 	max_cnt := 1
