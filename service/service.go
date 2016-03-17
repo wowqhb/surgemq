@@ -181,18 +181,18 @@ func (this *service) start(client_id string) error {
 
 	// Processor is responsible for reading messages out of the buffer and processing
 	// them accordingly.
-	/*this.wgStarted.Add(1)
-	this.wgStopped.Add(1)
-	go this.processor()*/
 	this.wgStarted.Add(1)
 	this.wgStopped.Add(1)
-	go this.processor_not_readFrom()
+	go this.processor()
+	/*this.wgStarted.Add(1)
+	this.wgStopped.Add(1)
+	go this.processor_not_readFrom()*/
 
 	// Receiver is responsible for reading from the connection and putting data into
 	// a buffer.
-	/*this.wgStarted.Add(1)
+	this.wgStarted.Add(1)
 	this.wgStopped.Add(1)
-	go this.receiver()*/
+	go this.receiver()
 
 	// Sender is responsible for writing data in the buffer into the connection.
 	this.wgStarted.Add(1)

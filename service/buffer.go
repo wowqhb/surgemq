@@ -277,7 +277,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		copy(write_bytes[0:m+1], this.b[0:m+1])
 		nlen := int64(0)
 		times := 0
-		cnt_ := int64(32)
 		for nlen < remlen_tmp {
 			if this.isDone() {
 				return total, io.EOF
@@ -288,12 +287,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 				times = 0
 			}
 			times++
-			tmpm := remlen_tmp - nlen
 
-			b_ := write_bytes[(start_ + nlen):]
-			if tmpm > cnt_ {
-				b_ = write_bytes[(start_ + nlen):(start_ + nlen + cnt_)]
-			}
+			b_ := write_bytes[(start_ + nlen):remlen_tmp]
 
 			//b_ := make([]byte, remlen)
 			n, err = r.Read(b_[0:])
