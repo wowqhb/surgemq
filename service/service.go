@@ -184,9 +184,6 @@ func (this *service) start(client_id string) error {
 	this.wgStarted.Add(1)
 	this.wgStopped.Add(1)
 	go this.processor()
-	/*this.wgStarted.Add(1)
-	this.wgStopped.Add(1)
-	go this.processor_not_readFrom()*/
 
 	// Receiver is responsible for reading from the connection and putting data into
 	// a buffer.
