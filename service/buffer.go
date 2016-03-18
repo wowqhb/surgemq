@@ -127,12 +127,10 @@ func (this *buffer) Close() error {
 
 	this.pcond.L.Lock()
 	this.ccond.Signal()
-	//this.ccond.Broadcast()
 	this.pcond.L.Unlock()
 
 	this.ccond.L.Lock()
 	this.pcond.Signal()
-	//this.pcond.Broadcast()
 	this.ccond.L.Unlock()
 
 	return nil
@@ -145,9 +143,7 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 	this.ccond.L.Lock()
 	defer func() {
 		this.pcond.Signal()
-		//this.pcond.Broadcast()
 		this.ccond.L.Unlock()
-		//time.Sleep(3 * time.Millisecond)
 	}()
 
 	ok = false
@@ -161,15 +157,10 @@ func (this *buffer) ReadBuffer() (p *[]byte, ok bool) {
 		writeIndex = this.GetCurrentWriteIndex()
 		if readIndex >= writeIndex {
 			this.pcond.Signal()
-			//this.pcond.Broadcast()
 			this.ccond.Wait()
-			//runtime.Gosched()
-			//time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
-		//time.Sleep(500 * time.Microsecond)
-		//time.Sleep(1 * time.Millisecond)
 	}
 	index := readIndex & this.mask //替代求模
 
@@ -190,9 +181,7 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 	this.pcond.L.Lock()
 	defer func() {
 		this.ccond.Signal()
-		//this.ccond.Broadcast()
 		this.pcond.L.Unlock()
-		//time.Sleep(3 * time.Millisecond)
 	}()
 
 	ok = false
@@ -205,16 +194,10 @@ func (this *buffer) WriteBuffer(in *[]byte) (ok bool) {
 		readIndex = this.GetCurrentReadIndex()
 		if writeIndex >= readIndex && writeIndex-readIndex >= this.size {
 			this.ccond.Signal()
-			//this.ccond.Broadcast()
 			this.pcond.Wait()
-			//time.Sleep(1 * time.Millisecond)
-			//runtime.Gosched()
-			//time.Sleep(5 * time.Millisecond)
 		} else {
 			break
 		}
-		//time.Sleep(500 * time.Microsecond)
-		//time.Sleep(1 * time.Millisecond)
 	}
 	index := writeIndex & this.mask //替代求模
 
@@ -241,7 +224,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		var write_bytes []byte
 
-		//b := make([]byte, 5)
 		n, err := r.Read(this.b[0:1])
 		if err != nil {
 			return total, io.EOF
@@ -258,7 +240,6 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 			_, err := r.Read(this.b[max_cnt:(max_cnt + 1)])
 
-			//fmt.Println(b)
 			if err != nil {
 				return total, err
 			}
@@ -289,24 +270,18 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 			}
 			times++
 			tmpm := remlen_tmp - nlen
-
-			b_ := write_bytes[(start_ + nlen):]
+			start__ := start_ + nlen
+			b_ := write_bytes[start__:]
 			if tmpm > readblock {
-				b_ = write_bytes[(start_ + nlen):(start_ + nlen + readblock)]
+				b_ = write_bytes[start__:(start__ + readblock)]
 			}
 
 			//b_ := make([]byte, remlen)
 			n, err = r.Read(b_[0:])
 
 			if err != nil {
-				/*Log.Errorc(func() string {
-					return fmt.Sprintf("从conn读取数据失败(%s)(0)", err)
-				})
-				time.Sleep(5 * time.Millisecond)
-				continue*/
 				return total, err
 			}
-			//write_bytes = append(write_bytes, b_[0:]...)
 			nlen += int64(n)
 			total += int64(n)
 		}
@@ -353,24 +328,6 @@ func (this *buffer) isDone() bool {
 	}
 
 	return false
-}
-
-func ringCopy(dst, src []byte, start int64) int {
-	n := len(src)
-
-	i, l := 0, 0
-
-	for n > 0 {
-		l = copy(dst[start:], src[i:])
-		i += l
-		n -= l
-
-		if n > 0 {
-			start = 0
-		}
-	}
-
-	return i
 }
 
 func powerOfTwo64(n int64) bool {
