@@ -17,7 +17,7 @@ package service
 import (
 	"fmt"
 	"io"
-	//   "runtime/debug"
+//   "runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -227,7 +227,7 @@ func (this *service) stop() {
 	if this.conn != nil {
 		Log.Debugc(func() string { return fmt.Sprintf("(%s) closing this.conn", this.cid()) })
 		this.conn.Close()
-		ClientMapCleanProcessor <- this.sess.ID()
+		//     ClientMapCleanProcessor <- this.sess.ID()
 	}
 
 	this.in.Close()

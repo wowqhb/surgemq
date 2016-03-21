@@ -17,13 +17,17 @@ package service
 import (
 	"encoding/base64"
 	"github.com/pquerna/ffjson/ffjson"
+//   "encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
+//   "runtime/debug"
 	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
@@ -31,8 +35,9 @@ import (
 )
 
 var (
-	errDisconnect  = errors.New("Disconnect")
-	MsgPendingTime time.Duration
+	errDisconnect    = errors.New("Disconnect")
+	MsgPendingTime   time.Duration
+	OfflieTopicRWmux sync.RWMutex
 )
 
 // processor() reads messages from the incoming buffer and processes them
@@ -53,6 +58,8 @@ func (this *service) processor() {
 		})
 	}()
 
+	//   Log.Debugc(func() string{ return fmt.Sprintf("(%s) Starting processor", this.cid())})
+	//   Log.Errorc(func() string{ return fmt.Sprintf("PendingQueue: %v", PendingQueue[0:10])})
 
 	this.wgStarted.Done()
 
@@ -126,7 +133,7 @@ func (this *service) processIncoming(msg message.Message) error {
 		//     Log.Errorc(func() string{ return fmt.Sprintf("this.subs is: %v,  count is %d, msg_type is %T", this.subs, len(this.subs), msg)})
 		// For PUBACK message, it means QoS 1, we should send to ack queue
 		//     Log.Errorc(func() string{ return fmt.Sprintf("\n%T:%d==========\nmsg is %v\n=====================", *msg, msg.PacketId(), *msg)})
-		go _process_ack(msg.PacketId())
+		go this._process_ack(msg.PacketId())
 		this.sess.Pub1ack.Ack(msg)
 		this.processAcked(this.sess.Pub1ack)
 
@@ -402,7 +409,7 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 	defer _return_temp_subs(subs)
 	defer _return_tmp_msg(msg)
 
-	err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), subs, nil)
+	err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &subs, nil)
 	if err != nil {
 		Log.Errorc(func() string { return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err) })
 		return err
@@ -412,9 +419,9 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 
 	//   Log.Errorc(func() string{ return fmt.Sprintf("(%s) Publishing to topic %q and %d subscribers", this.cid(), string(msg.Topic()), len(this.subs))})
 	//   fmt.Printf("value: %v\n", config.GetModel())
-	go handlePendingMessage(msg)
+	go this.handlePendingMessage(msg)
 
-	for _, s := range *subs {
+	for _, s := range subs {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
@@ -470,7 +477,7 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 	}
 	//   Log.Infoc(func() string{ return fmt.Sprintf("badge: %v, type: %T\n", badge_message.Data, badge_message.Data)})
 
-	go handleBadge(account_id, &badge_message)
+	go this.handleBadge(account_id, &badge_message)
 	return
 }
 
@@ -516,7 +523,7 @@ func (this *service) _process_publish(msg *message.PublishMessage) (err error) {
 	case config.Get("s_channel"):
 		go this.onReceiveBadge(msg)
 	default:
-		msg.SetPacketId(GetRandPkgId())
+		msg.SetPacketId(GetNextPktId())
 		go this.onPublish(msg)
 	}
 	return
@@ -525,7 +532,7 @@ func (this *service) _process_publish(msg *message.PublishMessage) (err error) {
 //根据topic和payload 推送消息
 func (this *service) _publish_to_topic(topic string, payload []byte) {
 	Log.Debugc(func() string {
-		return fmt.Sprintf("send msg to topic: %s", topic)
+		return fmt.Sprintf("(%s) send msg to topic: %s", this.cid(), topic)
 	})
 	tmp_msg := _get_tmp_msg()
 	tmp_msg.SetTopic([]byte(topic))
@@ -549,7 +556,7 @@ func (this *service) _process_offline_message(topic string) (err error) {
 	}
 
 	Log.Infoc(func() string {
-		return fmt.Sprintf("send %d offline msgs to topic: %s", n, topic)
+		return fmt.Sprintf("(%s) send %d offline msgs to topic: %s", this.cid(), n, topic)
 	})
 
 	OfflineTopicCleanProcessor <- topic
@@ -557,13 +564,14 @@ func (this *service) _process_offline_message(topic string) (err error) {
 }
 
 // 获取一个递增的pkgid
-func GetRandPkgId() uint16 {
-	PkgIdProcessor <- true
-	return <-PkgIdGenerator
+func GetNextPktId() uint16 {
+	atomic.AddUint32(&PktId, 1)
+
+	return (uint16)(PktId)
 }
 
 // 判断消息是否已读
-func handlePendingMessage(msg *message.PublishMessage) {
+func (this *service) handlePendingMessage(msg *message.PublishMessage) {
 	// 如果QOS=0,则无需等待直接返回
 	if msg.QoS() == message.QosAtMostOnce {
 		return
@@ -577,7 +585,7 @@ func handlePendingMessage(msg *message.PublishMessage) {
 	time.Sleep(time.Second * MsgPendingTime)
 	if PendingQueue[pkt_id] != nil {
 		Log.Debugc(func() string {
-			return fmt.Sprintf("receive ack timeout. send msg to offline msg queue.topic: %s", msg.Topic())
+			return fmt.Sprintf("(%s) receive ack timeout. send msg to offline msg queue.topic: %s", this.cid(), msg.Topic())
 		})
 		PendingQueue[pkt_id] = nil
 		OfflineTopicQueueProcessor <- msg
@@ -585,54 +593,62 @@ func handlePendingMessage(msg *message.PublishMessage) {
 }
 
 // 处理苹果设备的未读数，修改redis
-func handleBadge(account_id string, badge_message *BadgeMessage) {
+func (this *service) handleBadge(account_id string, badge_message *BadgeMessage) {
 	key := "badge_account:" + account_id
 	_, err := topics.RedisDo("set", key, badge_message.Data)
 	if err != nil {
 		Log.Errorc(func() string {
-			return fmt.Sprintf("can't set badge! account_id: %s, badge: %v", account_id, badge_message)
+			return fmt.Sprintf("(%s) can't set badge! account_id: %s, badge: %v", this.cid(), account_id, badge_message)
 		})
 	}
 }
 
 // 根据topic获取离线消息队列
 // 由于不能并发读写，所以要借助channel来实现
-func getOfflineMsg(topic string) (msg [][]byte) {
-	OfflineTopicGetProcessor <- topic
-	msg = <-OfflineTopicGetChannel
-	return
+func getOfflineMsg(topic string) (msgs [][]byte) {
+	OfflieTopicRWmux.RLock()
+	q := OfflineTopicMap[topic]
+	OfflieTopicRWmux.RUnlock()
+
+	if q == nil {
+		msgs = nil
+	} else {
+		msgs = q.GetAll()
+	}
+
+	return msgs
 }
 
 //根据pkt_id，将pending队列里的该条消息移除
-func _process_ack(pkg_id uint16) {
+func (this *service) _process_ack(pkg_id uint16) {
 	PendingQueue[pkg_id] = nil
 
 	Log.Debugc(func() string {
-		return fmt.Sprintf("receive ack, remove msg from pending queue: %d", pkg_id)
+		return fmt.Sprintf("(%s) receive ack, remove msg from pending queue: %d", this.cid(), pkg_id)
 	})
 }
 
 // 从池子里获取一个长度为1的slice，用于填充订阅队列
-func _get_temp_subs() (subs *[]interface{}) {
+func _get_temp_subs() (subs []interface{}) {
 	select {
 	case subs = <-SubscribersSliceQueue:
 	// 成功从缓存池里拿到，直接返回
 	default:
-		// 拿不到，说明池子里没对象了，就地创建一个
+	// 拿不到，说明池子里没对象了，就地创建一个
 		sub_p := make([]interface{}, 1, 1)
-		return &sub_p
+		return sub_p
 	}
 	return
 }
 
 // 把subs返还池子
-func _return_temp_subs(subs *[]interface{}) {
-	(*subs)[0] = nil
+func _return_temp_subs(subs []interface{}) {
+	subs[0] = nil
 	select {
 	case SubscribersSliceQueue <- subs:
 	// 成功返还，什么都不做
 	default:
-		*subs = nil
+		subs = nil
 		Log.Errorc(func() string {
 			return "return temp subs failed, may be the SubscribersSliceQueue is full!"
 		})
@@ -644,11 +660,11 @@ func _return_temp_subs(subs *[]interface{}) {
 func _get_tmp_msg() (msg *message.PublishMessage) {
 	select {
 	case msg = <-NewMessagesQueue:
-		msg.SetPacketId(GetRandPkgId())
+		msg.SetPacketId(GetNextPktId())
 	// 成功取到msg，什么都不做
 	default:
 		msg = message.NewPublishMessage()
-		msg.SetPacketId(GetRandPkgId())
+		msg.SetPacketId(GetNextPktId())
 		msg.SetQoS(message.QosAtLeastOnce)
 	}
 
