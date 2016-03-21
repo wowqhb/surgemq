@@ -248,10 +248,10 @@ func (this *Server) Publish(msg *message.PublishMessage, onComplete OnCompleteFu
 	//   defer _return_tmp_msg(msg)
 
 	Log.Debugc(func() string {
-		return fmt.Sprintf("(server) Publishing to topic %s and %d subscribers", string(msg.Topic()), len(*subs))
+		return fmt.Sprintf("(server) Publishing to topic %s and %d subscribers", string(msg.Topic()), len(subs))
 	})
 
-	for _, s := range *subs {
+	for _, s := range subs {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
@@ -374,7 +374,7 @@ func (this *Server) handleConnection(c io.Closer) (err error) {
 
 	c_id := string(req.ClientId())
 	c_hash := ClientHash{Name: c_id, Conn: &conn}
-	ClientMapProcessor <- &c_hash
+	ClientMapProcessor <- c_hash
 
 	err = this.getSession(svc, req, resp)
 	if err != nil {
