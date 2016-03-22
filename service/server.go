@@ -174,7 +174,7 @@ func (this *Server) ListenAndServe() error {
 						time.Sleep(tempDelay)
 						continue
 					}
-					panic(err)
+					return
 				}
 
 				go this.handleConnection(conn)
@@ -215,8 +215,7 @@ func (this *Server) ListenAndServe() error {
 						time.Sleep(tempDelay)
 						continue
 					}
-					//           return
-					panic(err)
+					return
 				}
 
 				go this.handleConnection(conn)
