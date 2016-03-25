@@ -524,6 +524,8 @@ func (this *service) _process_publish(msg *message.PublishMessage) (err error) {
 		go this.onGroupPublish(msg)
 	case config.Get("s_channel"):
 		go this.onReceiveBadge(msg)
+	case "/null":
+		go _return_tmp_msg(msg)
 	default:
 		msg.SetPacketId(GetNextPktId())
 		go this.onPublish(msg)

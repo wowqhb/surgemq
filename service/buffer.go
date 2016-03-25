@@ -126,6 +126,12 @@ func (this *buffer) Close() error {
 	atomic.StoreInt64(&this.done, 1)
 
 	this.pcond.L.Lock()
+	for i := 0; i < this.size; i++ {
+		this.buf[i] = nil
+	}
+	this.pcond.L.Unlock()
+
+	this.pcond.L.Lock()
 	this.ccond.Signal()
 	this.pcond.L.Unlock()
 
