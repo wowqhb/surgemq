@@ -22,7 +22,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
-	"time"
+	//   "time"
 )
 
 var (
@@ -223,7 +223,8 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 	total := int64(0)
 
 	for {
-		time.Sleep(10 * time.Millisecond)
+		// NOTE 这个睡眠十秒是为了解决什么问题来着？ 看起来似乎不是很必要
+		//     time.Sleep(10 * time.Millisecond)
 		if this.isDone() {
 			return total, io.EOF
 		}
@@ -232,7 +233,7 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 
 		n, err := r.Read(this.b[0:1])
 		if err != nil {
-			return total, io.EOF
+			return total, err
 		}
 		total += int64(n)
 		max_cnt := 1
@@ -263,18 +264,11 @@ func (this *buffer) ReadFrom(r io.Reader) (int64, error) {
 		write_bytes = make([]byte, total_tmp)
 		copy(write_bytes[0:m+1], this.b[0:m+1])
 		nlen := int64(0)
-		times := 0
 		readblock := int64(1024)
 		for nlen < remlen_tmp {
 			if this.isDone() {
 				return total, io.EOF
 			}
-			if times > 100 {
-				return total, io.EOF
-			} else {
-				times = 0
-			}
-			times++
 			tmpm := remlen_tmp - nlen
 			start__ := start_ + nlen
 			b_ := write_bytes[start__:]
@@ -400,18 +394,11 @@ func (this *buffer) ReadFrom_not_receiver(r io.Reader) (*[]byte, error) {
 	write_bytes = make([]byte, total_tmp)
 	copy(write_bytes[0:m+1], this.b[0:m+1])
 	nlen := int64(0)
-	times := 0
 	cnt_ := int64(32)
 	for nlen < remlen_tmp {
 		if this.isDone() {
 			return nil, io.EOF
 		}
-		if times > 100 {
-			return nil, io.EOF
-		} else {
-			times = 0
-		}
-		times++
 		tmpm := remlen_tmp - nlen
 
 		if tmpm > cnt_ {

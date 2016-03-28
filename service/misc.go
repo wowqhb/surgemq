@@ -15,12 +15,20 @@
 package service
 
 import (
+	bs "bytes"
+	"compress/gzip"
 	"encoding/binary"
 	"fmt"
+	//   gzip "github.com/klauspost/pgzip"
 	"io"
+	"io/ioutil"
 	"net"
 
 	"github.com/surgemq/message"
+)
+
+var (
+	CompressLevel int
 )
 
 func getConnectMessage(conn io.Closer) (*message.ConnectMessage, error) {
@@ -145,4 +153,40 @@ func writeMessageBuffer(c io.Closer, b []byte) error {
 func isTimeout(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && e.Timeout()
+}
+
+func Gzip(bytes []byte) (compressed_bytes []byte, err error) {
+	var res bs.Buffer
+	gz, err := gzip.NewWriterLevel(&res, CompressLevel)
+	if err != nil {
+		Log.Error(func() string { return fmt.Sprintf("make zip writer err: %s\n", err) })
+		return nil, err
+	}
+
+	_, err = gz.Write(bytes)
+	if err != nil {
+		Log.Error(func() string { return fmt.Sprintf("write zip err: %s\n", err) })
+		return nil, err
+	}
+	gz.Close()
+	compressed_bytes = res.Bytes()
+
+	return compressed_bytes, nil
+}
+
+func Gunzip(compressed_bytes []byte) (bytes []byte, err error) {
+	gz, err := gzip.NewReader(bs.NewReader(compressed_bytes))
+	if err != nil {
+		Log.Error(func() string { return fmt.Sprintf("unzip reader err: %s\n", err) })
+		return nil, err
+	}
+	//   defer gz.Close()   // 如果用pgzip，这里需要用defer
+	gz.Close() // 如果用内建gzip，这里不要用defer
+
+	bytes, err = ioutil.ReadAll(gz)
+	if err != nil {
+		Log.Error(func() string { return fmt.Sprintf("unzip err: %s\n", err) })
+		return nil, err
+	}
+	return bytes, nil
 }

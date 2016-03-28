@@ -14,6 +14,7 @@ var (
 	OfflineTopicMap            = make(map[string]*OfflineTopicQueue)
 	OfflineTopicQueueProcessor = make(chan *message.PublishMessage, 2048)
 	OfflineTopicCleanProcessor = make(chan string, 2048)
+	OfflineTopicPayloadUseGzip bool
 
 	ClientMap          = make(map[string]*net.Conn)
 	ClientMapProcessor = make(chan ClientHash, 1024)
@@ -37,6 +38,7 @@ type OfflineTopicQueue struct {
 	Pos     int
 	Length  int
 	Cleaned bool
+	Gziped  bool
 	//   lock  *sync.RWMutex
 }
 
@@ -46,6 +48,7 @@ func NewOfflineTopicQueue(length int) (q *OfflineTopicQueue) {
 		0,
 		length,
 		true,
+		OfflineTopicPayloadUseGzip,
 		//     new(sync.RWMutex),
 	}
 
@@ -60,7 +63,18 @@ func (this *OfflineTopicQueue) Add(msg_bytes []byte) {
 		this.Q = make([][]byte, this.Length, this.Length)
 	}
 
-	this.Q[this.Pos] = msg_bytes
+	// 判断是否gzip，如果是，则压缩后再存入
+	if this.Gziped {
+		mb, err := Gzip(msg_bytes)
+		if err != nil {
+			Log.Errorc(func() string { return fmt.Sprintf("gzip failed. msg: %s, err: %s", msg_bytes, err) })
+			return
+		}
+
+		this.Q[this.Pos] = mb
+	} else {
+		this.Q[this.Pos] = msg_bytes
+	}
 	this.Pos++
 
 	if this.Pos >= this.Length {
@@ -79,6 +93,7 @@ func (this *OfflineTopicQueue) Clean() {
 	this.Q = nil
 	this.Pos = 0
 	this.Cleaned = true
+	this.Gziped = OfflineTopicPayloadUseGzip
 	//   this.lock.Unlock()
 }
 
@@ -91,9 +106,65 @@ func (this *OfflineTopicQueue) GetAll() (msg_bytes [][]byte) {
 
 		msg_bytes = this.Q[this.Pos:this.Length]
 		msg_bytes = append(msg_bytes, this.Q[0:this.Pos]...)
+
+		// 判断是否gzip存储，如果是，则解压后再取出
+		if this.Gziped {
+			for i, bytes := range msg_bytes {
+				if bytes != nil {
+					mb, err := Gunzip(bytes)
+					if err != nil {
+						Log.Errorc(func() string { return err.Error() })
+					}
+
+					msg_bytes[i] = mb
+				}
+			}
+		}
 		return msg_bytes
 	}
 	//   this.lock.RUnlock()
+}
+
+func (this *OfflineTopicQueue) ConvertToGzip() (err error) {
+	if this.Cleaned {
+		return nil
+	} else if !this.Gziped {
+		this.Gziped = true
+		for i, bytes := range this.Q {
+			if bytes != nil {
+				go func() {
+					mb, err := Gzip(bytes)
+					if err != nil {
+						Log.Errorc(func() string { return err.Error() })
+					}
+
+					this.Q[i] = mb
+				}()
+			}
+		}
+	}
+	return nil
+}
+
+func (this *OfflineTopicQueue) ConvertToUnzip() (err error) {
+	if this.Cleaned {
+		return nil
+	} else if this.Gziped {
+		this.Gziped = false
+		for i, bytes := range this.Q {
+			if bytes != nil {
+				go func() {
+					mb, err := Gunzip(bytes)
+					if err != nil {
+						Log.Errorc(func() string { return err.Error() })
+					}
+
+					this.Q[i] = mb
+				}()
+			}
+		}
+	}
+	return nil
 }
 
 func init() {
@@ -146,6 +217,8 @@ func init() {
 					OfflieTopicRWmux.Unlock()
 				}
 				q.Add(msg.Payload())
+				msg.SetPayload(nil)
+				// copy(aSlice, bSlice)
 
 				Log.Debugc(func() string {
 					return fmt.Sprintf("add offline message to the topic: %s", topic)
