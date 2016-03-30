@@ -168,30 +168,26 @@ func (this *OfflineTopicQueue) ConvertToUnzip() (err error) {
 }
 
 func init() {
-	go func() {
-		for i := 0; i < 2048; i++ {
-			sub_p := make([]interface{}, 1, 1)
-			select {
-			case SubscribersSliceQueue <- sub_p:
-			default:
-				sub_p = nil
-				return
-			}
+	for i := 0; i < 1024; i++ {
+		sub_p := make([]interface{}, 1, 1)
+		select {
+		case SubscribersSliceQueue <- sub_p:
+		default:
+			sub_p = nil
+			return
 		}
-	}()
+	}
 
-	go func() {
-		for i := 0; i < 1024; i++ {
-			tmp_msg := message.NewPublishMessage()
-			tmp_msg.SetQoS(message.QosAtLeastOnce)
+	for i := 0; i < 1024; i++ {
+		tmp_msg := message.NewPublishMessage()
+		tmp_msg.SetQoS(message.QosAtLeastOnce)
 
-			select {
-			case NewMessagesQueue <- tmp_msg:
-			default:
-				return
-			}
+		select {
+		case NewMessagesQueue <- tmp_msg:
+		default:
+			return
 		}
-	}()
+	}
 
 	go func() {
 		for {

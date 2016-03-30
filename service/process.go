@@ -28,7 +28,6 @@ import (
 	"time"
 
 	//   "runtime/debug"
-	"github.com/nagae-memooff/config"
 	"github.com/nagae-memooff/surgemq/sessions"
 	"github.com/nagae-memooff/surgemq/topics"
 	"github.com/surgemq/message"
@@ -38,6 +37,9 @@ var (
 	errDisconnect    = errors.New("Disconnect")
 	MsgPendingTime   time.Duration
 	OfflieTopicRWmux sync.RWMutex
+	BroadCastChannel string
+	SendChannel      string
+	ApnPushChannel   string
 )
 
 // processor() reads messages from the incoming buffer and processes them
@@ -417,8 +419,6 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 		return err
 	}
 
-	msg.SetRetain(false)
-
 	//   Log.Errorc(func() string{ return fmt.Sprintf("(%s) Publishing to topic %q and %d subscribers", this.cid(), string(msg.Topic()), len(this.subs))})
 	//   fmt.Printf("value: %v\n", config.GetModel())
 	go this.handlePendingMessage(msg)
@@ -520,12 +520,12 @@ func (this *service) onGroupPublish(msg *message.PublishMessage) (err error) {
 // 处理publish类型的消息，如果是特殊频道特殊处理，否则正常处理
 func (this *service) _process_publish(msg *message.PublishMessage) (err error) {
 	switch string(msg.Topic()) {
-	case config.Get("broadcast_channel"):
+	case BroadCastChannel:
 		go this.onGroupPublish(msg)
-	case config.Get("s_channel"):
+	case SendChannel:
 		go this.onReceiveBadge(msg)
-	case "/null":
-		go _return_tmp_msg(msg)
+	case ApnPushChannel:
+		// TODO 处理苹果推送
 	default:
 		msg.SetPacketId(GetNextPktId())
 		go this.onPublish(msg)
@@ -671,9 +671,12 @@ func _get_tmp_msg() (msg *message.PublishMessage) {
 		msg.SetPacketId(GetNextPktId())
 	// 成功取到msg，什么都不做
 	default:
+		Log.Debugc(func() string {
+			return "no tmp msg in NewMsgQueue. will new it."
+		})
 		msg = message.NewPublishMessage()
-		msg.SetPacketId(GetNextPktId())
 		msg.SetQoS(message.QosAtLeastOnce)
+		msg.SetPacketId(GetNextPktId())
 	}
 
 	return
