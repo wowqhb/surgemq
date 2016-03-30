@@ -32,8 +32,6 @@ type mxTopics struct {
 }
 
 func init() {
-	Channelcache = make(map[string]string)
-	RedisPool = newRedisPool()
 	Register("mx", NewMXProvider())
 }
 

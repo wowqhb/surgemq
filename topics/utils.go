@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func newRedisPool() *redis.Pool {
+func NewRedisPool() *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:   config.GetInt("redis_max_idle"),
 		MaxActive: config.GetInt("redis_concurrent"), // max number of connections

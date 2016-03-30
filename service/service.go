@@ -258,22 +258,20 @@ func (this *service) stop() {
 	}
 
 	// Publish will message if WillFlag is set. Server side only.
-	if !this.client && this.sess.Cmsg.WillFlag() {
-		Log.Infoc(func() string {
-			return fmt.Sprintf("(%s) service/stop: connection unexpectedly closed. Sending Will.", this.cid())
-		})
-		this.onPublish(this.sess.Will)
-	}
+	//   if !this.client && this.sess.Cmsg.WillFlag() {
+	//     Log.Infoc(func() string {
+	//       return fmt.Sprintf("(%s) service/stop: connection unexpectedly closed. Sending Will.", this.cid())
+	//     })
+	//     this.onPublish(this.sess.Will)
+	//   }
 
 	// Remove the client topics manager
 	if this.client {
 		topics.Unregister(this.sess.ID())
 	}
 
-	// Remove the session from session store if it's suppose to be clean session
-	if this.sess.Cmsg.CleanSession() && this.sessMgr != nil {
-		this.sessMgr.Del(this.sess.ID())
-	}
+	// 无视clean session标记，永远清除session
+	this.sessMgr.Del(this.sess.ID())
 
 	this.conn = nil
 	this.in = nil

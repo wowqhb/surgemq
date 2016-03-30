@@ -21,7 +21,7 @@ var (
 
 	PktId = uint32(1)
 
-	NewMessagesQueue      = make(chan *message.PublishMessage, 65536)
+	NewMessagesQueue      = make(chan *message.PublishMessage, 16384)
 	SubscribersSliceQueue = make(chan []interface{}, 2048)
 
 	Max_message_queue int
@@ -181,7 +181,7 @@ func init() {
 	}()
 
 	go func() {
-		for i := 0; i < 65536; i++ {
+		for i := 0; i < 1024; i++ {
 			tmp_msg := message.NewPublishMessage()
 			tmp_msg.SetQoS(message.QosAtLeastOnce)
 
