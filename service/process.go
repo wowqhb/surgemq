@@ -265,7 +265,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			}
 
 		case message.PUBACK, message.PUBCOMP, message.SUBACK, message.UNSUBACK, message.PINGRESP:
-			Log.Debugc(func() string { return fmt.Sprintf("process/processAcked: %s", ack) })
+			Log.Debugc(func() string {
+				return fmt.Sprintf("process/processAcked: %s", ack)
+			})
 			// If ack is PUBACK, that means the QoS 1 message sent by this service got
 			// ack'ed. There's nothing to do other than calling onComplete() below.
 
@@ -284,7 +286,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 			err = nil
 
 		default:
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) Invalid ack message type %s.", this.cid(), ackmsg.State)
+			})
 			continue
 		}
 
@@ -297,7 +301,9 @@ func (this *service) processAcked(ackq *sessions.Ackqueue) {
 				})
 			} else if onComplete != nil {
 				if err := onComplete(msg, ack, nil); err != nil {
-					Log.Errorc(func() string { return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err) })
+					Log.Errorc(func() string {
+						return fmt.Sprintf("process/processAcked: Error running onComplete(): %v", err)
+					})
 				}
 			}
 		}
@@ -357,11 +363,15 @@ func (this *service) processSubscribe(msg *message.SubscribeMessage) error {
 		rqos, err := this.topicsMgr.Subscribe(t, qos[i], &this.onpub, this.sess.ID())
 		//     rqos, err := this.topicsMgr.Subscribe(t, qos[i], &this)
 		if err != nil {
-			Log.Errorc(func() string { return fmt.Sprintf("(%s) subscribe topic %s failed: %s", this.cid(), t, err) })
+			Log.Errorc(func() string {
+				return fmt.Sprintf("(%s) subscribe topic %s failed: %s", this.cid(), t, err)
+			})
 			this.stop()
 			return err
 		}
-		Log.Infoc(func() string { return fmt.Sprintf("(%s) subscribe topic %s", this.cid(), t) })
+		Log.Infoc(func() string {
+			return fmt.Sprintf("(%s) subscribe topic %s", this.cid(), t)
+		})
 		this.sess.AddTopic(string(t), qos[i])
 
 		retcodes = append(retcodes, rqos)
@@ -415,7 +425,9 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 
 	err = this.topicsMgr.Subscribers(msg.Topic(), msg.QoS(), &subs, nil)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("(%s) Error retrieving subscribers list: %v", this.cid(), err)
+		})
 		return err
 	}
 
@@ -427,7 +439,9 @@ func (this *service) onPublish(msg *message.PublishMessage) (err error) {
 		if s != nil {
 			fn, ok := s.(*OnPublishFunc)
 			if !ok {
-				Log.Errorc(func() string { return fmt.Sprintf("Invalid onPublish Function: %T", s) })
+				Log.Errorc(func() string {
+					return fmt.Sprintf("Invalid onPublish Function: %T", s)
+				})
 				return fmt.Errorf("Invalid onPublish Function")
 			} else {
 				(*fn)(msg)
@@ -454,7 +468,9 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 	datas := strings.Split(string(msg.Payload()), ":")
 	//   datas := strings.Split(fmt.Sprintf("%s", msg.Payload()), ":")
 	if len(datas) != 2 {
-		Log.Errorc(func() string { return fmt.Sprintf("invalid message payload: %s", msg.Payload()) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("invalid message payload: %s", msg.Payload())
+		})
 		return errors.New(fmt.Sprintf("invalid message payload: %s", msg.Payload()))
 	}
 
@@ -467,7 +483,9 @@ func (this *service) onReceiveBadge(msg *message.PublishMessage) (err error) {
 
 	payload_bytes, err := base64.StdEncoding.DecodeString(payload_base64)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", payload_base64) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't decode payload: %s", payload_base64)
+		})
 	}
 
 	err = ffjson.Unmarshal([]byte(payload_bytes), &badge_message)
@@ -495,13 +513,17 @@ func (this *service) onGroupPublish(msg *message.PublishMessage) (err error) {
 
 	err = ffjson.Unmarshal(msg.Payload(), &broadcast_msg)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't parse message json: %s", msg.Payload()) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't parse message json: %s", msg.Payload())
+		})
 		return
 	}
 
 	payload, err = base64.StdEncoding.DecodeString(broadcast_msg.Payload)
 	if err != nil {
-		Log.Errorc(func() string { return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload) })
+		Log.Errorc(func() string {
+			return fmt.Sprintf("can't decode payload: %s", broadcast_msg.Payload)
+		})
 		return
 	}
 
@@ -525,7 +547,7 @@ func (this *service) _process_publish(msg *message.PublishMessage) (err error) {
 	case SendChannel:
 		go this.onReceiveBadge(msg)
 	case ApnPushChannel:
-		// TODO 处理苹果推送
+	// TODO 处理苹果推送
 	default:
 		msg.SetPacketId(GetNextPktId())
 		go this.onPublish(msg)
@@ -668,8 +690,18 @@ func _return_temp_subs(subs []interface{}) {
 func _get_tmp_msg() (msg *message.PublishMessage) {
 	select {
 	case msg = <-NewMessagesQueue:
-		msg.SetPacketId(GetNextPktId())
-	// 成功取到msg，什么都不做
+		/**
+		2016年3月31日 增加判断msg是否是nil，如果是则执行default部分
+		*/
+		if msg != nil {
+			msg.SetPacketId(GetNextPktId())
+			// 成功取到msg，什么都不做
+		} else {
+			Log.Debugc(func() string {
+				return "msg is nil, this msg in NewMsgQueue. will new it."
+			})
+			fallthrough
+		}
 	default:
 		Log.Debugc(func() string {
 			return "no tmp msg in NewMsgQueue. will new it."
